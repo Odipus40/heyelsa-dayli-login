@@ -22,7 +22,6 @@ async function checkStatus(address) {
   const payload = {
     query: `
        evm_address {
-        userdrop {
           user(filter: $filter) {
             point
             referral_code
@@ -74,7 +73,7 @@ async function runTask(address, task) {
   const payload = {
     query: `
       mutation UpdateAirdropTaskStatus($input: UpdateTaskStatusInputData!) {
-        userdrop {
+        evm_address {
           updateTaskStatus(input: $input) {
             success
             progress {
