@@ -1,0 +1,28 @@
+{
+  "name": "heyelsa-dayli-login",
+  "version": "1.0.0",
+  "description": "A bot for automating ETH and WETH transactions on the Lisk network, facilitating seamless currency conversions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "daily": "daily.js"
+  },
+  "keywords": [
+    "heyelsa",
+    "bot",
+    "automation",
+    "eth",
+    "weth",
+    "transactions",
+    "crypto"
+  ],
+  "author": "dante4rt",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "colors": "^1.4.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4"
+  }
+}
