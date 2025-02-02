@@ -21,13 +21,12 @@ displayHeader();
 async function checkStatus(address) {
   const payload = {
     query: `
-      query AirdropUser($filter: UserFilter!) {
+       evm_address {
         userdrop {
           user(filter: $filter) {
-            address
-            verifiedStatus
+            point
+            referral_code
             rank
-            points
             referrals {
               totalCount
               points
