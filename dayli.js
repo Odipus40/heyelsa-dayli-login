@@ -8,44 +8,20 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-const API_URL = 'https://app.heyelsa.ai/login';
-const WAIT_TIME = (24 * 60 + 5) * 60 * 1000;
+const API_URL = 'https://api.heyelsa.ai/api/point'; // Ganti dengan URL API yang benar
+const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
 
-const TASKS = [
-  { id: 1, name: "Daily Login" },
-];
-
-displayHeader();
+const TASKS = [{ id: 1, name: "Daily Login" }];
 
 async function checkStatus(address) {
-  const payload = {
-          id
-          address {
-          action: '$F1',
-          options: {
-                onSetAIState: '$F2'
-            },
-            networks: ["Arbitrum", "Base", "Optimism", "Polygon", "BSC", "Hyperliquid"]
-        };
-
-        const response = await axios.post(API_URL, payload, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-    variables: {
-      filter: { address },
-    },
-  };
-
   try {
-    const response = await axios.post(API_URL, payload, {
+    const response = await axios.post(API_URL + "/status", { address }, { points }, { address }
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    const user = response.data.data.WebKitFormBoundaryqXiHrnM0rJUkUnNi.user;
+    const user = response.data.user;
     if (!user) {
       console.log('❌ User not found or error occurred.'.red);
       return;
@@ -55,6 +31,7 @@ async function checkStatus(address) {
     console.log(`💻 Status: ${user.verifiedStatus === "IS_FULLY_VERIFIED" ? "VERIFIED" : user.verifiedStatus}`);
     console.log(`🏆 Rank: ${user.rank}`);
     console.log(`💰 Points: ${user.points}`);
+    
     if (user.referrals) {
       console.log(`👥 Total Referrals: ${user.referrals.totalCount}`);
       console.log(`💎 Referral Points: ${user.referrals.points}`);
@@ -68,52 +45,26 @@ async function checkStatus(address) {
 }
 
 async function runTask(address, task) {
-  const payload = {
-    [{"action":"$F1","options":{"onSetAIState":"$F2"}},[],"0x6F5dA981982011F1aC2ec345b5C2681C16298f2E","Injected","$undefined",["Arbitrum","Base","Optimism","Polygon","BSC","Hyperliquid"]]
-          updateTaskStatus(input: $input) {
-            success
-            progress {
-              isCompleted
-              completedAt
-            }
-          }
-        }
-      }
-    `,
-    variables: {
-      input: {
-        address,
-        taskID: task.id,
-      },
-    },
-  };
-
   try {
-    const response = await axios.post(API_URL, payload, {
+    const response = await axios.post(API_URL + "/complete-task", { address, taskID: task.id }, {
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    const data = response.data;
-    if (data.data && data.data.WebKitFormBoundaryqXiHrnM0rJUkUnNi.updateTaskStatus.success) {
-      const { completedAt } = data.data.WebKitFormBoundaryqXiHrnM0rJUkUnNi.updateTaskStatus.progress;
-      console.log(`➡️  Running task: ${task.name}`);
-      console.log(`✅ Task "${task.name}"`.green.bold + ` completed successfully at `.green.bold + `${new Date(completedAt)}`.green.bold);
+    if (response.data.success) {
+      console.log(`✅ Task "${task.name}" completed successfully.`);
     } else {
-      console.log(`➡️ Running task: ${task.name}`);
-      console.log(`❌ Task "${task.name}" failed. Check the status or try again.`.red);
+      console.log(`❌ Task "${task.name}" failed. Check the status or try again.`);
     }
   } catch (error) {
-    console.error(`⚠️ An error occurred while running task "${task.name}":`, error.response?.data || error.message);
+    console.error(`⚠️ Error running task "${task.name}":`, error.response?.data || error.message);
   }
 }
 
 async function startDailyTasks(address) {
   while (true) {
-
     await checkStatus(address);
-
     console.log('🚀 Starting daily tasks...\n'.blue.bold);
 
     for (const task of TASKS) {
@@ -122,7 +73,7 @@ async function startDailyTasks(address) {
 
     console.log('\n🎉 All tasks completed for today.'.green.bold);
     console.log('⏳ Waiting 24 hours before the next cycle...\n'.yellow);
-    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
+    await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
   }
 }
 
