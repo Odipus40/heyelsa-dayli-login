@@ -12,7 +12,7 @@ const API_URL = 'https://app.heyelsa.ai/login';
 const WAIT_TIME = (24 * 60 + 5) * 60 * 1000;
 
 const TASKS = [
-  { id: 1, name: "Daily Check-In" },
+  { id: 1, name: "Daily Login" },
 ];
 
 displayHeader();
