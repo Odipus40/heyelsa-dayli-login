@@ -1,13 +1,26 @@
-import axios from 'axios';
+const axios = require('axios');
+const readline = require('readline');
+require('colors');
+const { displayHeader } = require('./helpers');
 
-const API_URL = 'https://api.heyelsa.com/daily-login'; // Ganti dengan endpoint yang benar
-const WALLET_ADDRESS = '0x6F5dA981982011F1aC2ec345b5C2681C16298f2E';
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-async function dailyLogin() {
-    try {
-        const payload = {
-            id: '6d825d29a6f8b2678cb74405bfd038c7db9c4a2f',
-            address: WALLET_ADDRESS,
+const API_URL = 'https://app.heyelsa.ai/login';
+const WAIT_TIME = (24 * 60 + 5) * 60 * 1000;
+
+const TASKS = [
+  { id: 1, name: "Daily Check-In" },
+];
+
+displayHeader();
+
+async function checkStatus(address) {
+  const payload = {
+          id:
+            evm_address:
             action: '$F1',
             options: {
                 onSetAIState: '$F2'
@@ -20,24 +33,106 @@ async function dailyLogin() {
                 'Content-Type': 'application/json'
             }
         });
+    variables: {
+      filter: { address },
+    },
+  };
 
-        if (response.data.success) {
-            console.log('✅ Daily login successful:', response.data);
-        } else {
-            console.log('⚠️ Daily login failed:', response.data);
+  try {
+    const response = await axios.post(API_URL, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const user = response.data.data.WebKitFormBoundaryqXiHrnM0rJUkUnNi.user;
+    if (!user) {
+      console.log('❌ User not found or error occurred.'.red);
+      return;
+    }
+
+    console.log(`\n💳 Address: ${user.address}`);
+    console.log(`💻 Status: ${user.verifiedStatus === "IS_FULLY_VERIFIED" ? "VERIFIED" : user.verifiedStatus}`);
+    console.log(`🏆 Rank: ${user.rank}`);
+    console.log(`💰 Points: ${user.points}`);
+    if (user.referrals) {
+      console.log(`👥 Total Referrals: ${user.referrals.totalCount}`);
+      console.log(`💎 Referral Points: ${user.referrals.points}`);
+      console.log(`🏅 Referral Rank: ${user.referrals.rank}`);
+    }
+
+    console.log('\n');
+  } catch (error) {
+    console.error('⚠️ Error checking status:', error.response?.data || error.message);
+  }
+}
+
+async function runTask(address, task) {
+  const payload = {
+    [{"action":"$F1","options":{"onSetAIState":"$F2"}},[],"0x6F5dA981982011F1aC2ec345b5C2681C16298f2E","Injected","$undefined",["Arbitrum","Base","Optimism","Polygon","BSC","Hyperliquid"]]
+          updateTaskStatus(input: $input) {
+            success
+            progress {
+              isCompleted
+              completedAt
+            }
+          }
         }
-    } catch (error) {
-        console.error('❌ Error during daily login:', error.response?.data || error.message);
+      }
+    `,
+    variables: {
+      input: {
+        address,
+        taskID: task.id,
+      },
+    },
+  };
+
+  try {
+    const response = await axios.post(API_URL, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = response.data;
+    if (data.data && data.data.WebKitFormBoundaryqXiHrnM0rJUkUnNi.updateTaskStatus.success) {
+      const { completedAt } = data.data.WebKitFormBoundaryqXiHrnM0rJUkUnNi.updateTaskStatus.progress;
+      console.log(`➡️  Running task: ${task.name}`);
+      console.log(`✅ Task "${task.name}"`.green.bold + ` completed successfully at `.green.bold + `${new Date(completedAt)}`.green.bold);
+    } else {
+      console.log(`➡️ Running task: ${task.name}`);
+      console.log(`❌ Task "${task.name}" failed. Check the status or try again.`.red);
     }
+  } catch (error) {
+    console.error(`⚠️ An error occurred while running task "${task.name}":`, error.response?.data || error.message);
+  }
 }
 
-async function startDailyTask() {
-    while (true) {
-        console.log('🚀 Running daily login...');
-        await dailyLogin();
-        console.log('⏳ Waiting 24 hours for the next login...');
-        await new Promise(resolve => setTimeout(resolve, 24 * 60 * 60 * 1000));
+async function startDailyTasks(address) {
+  while (true) {
+
+    await checkStatus(address);
+
+    console.log('🚀 Starting daily tasks...\n'.blue.bold);
+
+    for (const task of TASKS) {
+      await runTask(address, task);
     }
+
+    console.log('\n🎉 All tasks completed for today.'.green.bold);
+    console.log('⏳ Waiting 24 hours before the next cycle...\n'.yellow);
+    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
+  }
 }
 
-startDailyTask();
+rl.question('🔑 Enter your address: '.cyan, (address) => {
+  if (!address) {
+    console.log('⚠️ Address cannot be empty!'.red.bold);
+    rl.close();
+    return;
+  }
+
+  rl.close();
+  startDailyTasks(address);
+});
