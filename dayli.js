@@ -19,8 +19,8 @@ displayHeader();
 
 async function checkStatus(address) {
   const payload = {
-          id:
-            evm_address:
+          id
+            evm_address
             action: '$F1',
             options: {
                 onSetAIState: '$F2'
