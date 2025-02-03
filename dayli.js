@@ -20,16 +20,10 @@ displayHeader();
 
 async function checkStatus(address) {
   const payload = {
-    query: `
-       evm_address {
-          user(filter: $filter) {
-            point
-            referral_code
-            rank
-            referrals {
-              totalCount
-              points
-              rank
+   query: `
+     evm_address
+     points
+      referral_code 
             }
           }
         }
@@ -47,7 +41,7 @@ async function checkStatus(address) {
       },
     });
 
-    const user = response.data.data.userdrop.user;
+    const user = response.data.data.points.user;
     if (!user) {
       console.log('❌ User not found or error occurred.'.red);
       return;
@@ -100,8 +94,8 @@ async function runTask(address, task) {
     });
 
     const data = response.data;
-    if (data.data && data.data.evm_address.updateTaskStatus.success) {
-      const { completedAt } = data.data.evm_address.updateTaskStatus.progress;
+    if (data.data && data.data.points.updateTaskStatus.success) {
+      const { completedAt } = data.data.points.updateTaskStatus.progress;
       console.log(`➡️  Running task: ${task.name}`);
       console.log(`✅ Task "${task.name}"`.green.bold + ` completed successfully at `.green.bold + `${new Date(completedAt)}`.green.bold);
     } else {
