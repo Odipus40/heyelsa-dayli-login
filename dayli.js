@@ -41,13 +41,13 @@ async function checkStatus(address) {
       },
     });
 
-    const user = response.data.data.points.user;
-    if (!user) {
-      console.log('❌ User not found or error occurred.'.red);
-      return;
-    }
+    const user = response?.data?.data?.user;
+if (!user) {
+  console.log('❌ User not found or error occurred.'.red);
+  return;
+         }
 
-    console.log(`\n💳 Address: ${user.address}`);
+   console.log(`\n💳 Address: ${user.address}`);
     console.log(`💻 Status: ${user.verifiedStatus === "IS_FULLY_VERIFIED" ? "VERIFIED" : user.verifiedStatus}`);
     console.log(`🏆 Rank: ${user.rank}`);
     console.log(`💰 Points: ${user.points}`);
@@ -64,27 +64,20 @@ async function checkStatus(address) {
 }
 
 async function runTask(address, task) {
-  const payload = {
-    query: `
-      mutation UpdateAirdropTaskStatus($input: UpdateTaskStatusInputData!) {
-        evm_address {
-          updateTaskStatus(input: $input) {
-            success
-            progress {
-              isCompleted
-              completedAt
-            }
-          }
-        }
+const payload = {
+  query: `
+    query GetUserStatus($filter: UserFilterInput!) {
+      user(filter: $filter) {
+        evm_address
+        points
+        referral_code
       }
-    `,
-    variables: {
-      input: {
-        address,
-        taskID: task.id,
-      },
-    },
-  };
+    }
+  `,
+  variables: {
+    filter: { address },
+  },
+};
 
   try {
     const response = await axios.post(API_URL, payload, {
@@ -93,30 +86,36 @@ async function runTask(address, task) {
       },
     });
 
-    const data = response.data;
-    if (data.data && data.data.points.updateTaskStatus.success) {
-      const { completedAt } = data.data.points.updateTaskStatus.progress;
-      console.log(`➡️  Running task: ${task.name}`);
-      console.log(`✅ Task "${task.name}"`.green.bold + ` completed successfully at `.green.bold + `${new Date(completedAt)}`.green.bold);
-    } else {
-      console.log(`➡️ Running task: ${task.name}`);
-      console.log(`❌ Task "${task.name}" failed. Check the status or try again.`.red);
-    }
+    const updateStatus = response?.data?.data?.evm_address?.updateTaskStatus;
+if (updateStatus?.success) {
+  const { completedAt } = updateStatus.progress;
+  console.log(`✅ Task "${task.name}" completed successfully at ${new Date(completedAt)}`);
+} else {
+  console.log(`❌ Task "${task.name}" failed. Check the status or try again.`);
+}
+
   } catch (error) {
     console.error(`⚠️ An error occurred while running task "${task.name}":`, error.response?.data || error.message);
   }
 }
-
 async function startDailyTasks(address) {
-  while (true) {
+  try {
+    while (true) {
+      await checkStatus(address);
+      console.log('🚀 Starting daily tasks...\n'.blue.bold);
 
-    await checkStatus(address);
+      for (const task of TASKS) {
+        await runTask(address, task);
+      }
 
-    console.log('🚀 Starting daily tasks...\n'.blue.bold);
-
-    for (const task of TASKS) {
-      await runTask(address, task);
+      console.log('\n🎉 All tasks completed for today.'.green.bold);
+      console.log('⏳ Waiting 24 hours before the next cycle...\n'.yellow);
+      await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
     }
+  } catch (error) {
+    console.error('❌ Fatal error in startDailyTasks:', error);
+  }
+}
 
     console.log('\n🎉 All tasks completed for today.'.green.bold);
     console.log('⏳ Waiting 24 hours before the next cycle...\n'.yellow);
