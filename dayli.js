@@ -100,8 +100,8 @@ async function runTask(address, task) {
     });
 
     const data = response.data;
-    if (data.data && data.data.userdrop.updateTaskStatus.success) {
-      const { completedAt } = data.data.userdrop.updateTaskStatus.progress;
+    if (data.data && data.data.evm_address.updateTaskStatus.success) {
+      const { completedAt } = data.data.evm_address.updateTaskStatus.progress;
       console.log(`➡️  Running task: ${task.name}`);
       console.log(`✅ Task "${task.name}"`.green.bold + ` completed successfully at `.green.bold + `${new Date(completedAt)}`.green.bold);
     } else {
