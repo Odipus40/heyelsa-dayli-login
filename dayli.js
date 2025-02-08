@@ -19,17 +19,18 @@ const CHECKIN_INTERVAL_FAIL = 8 * 60 * 60 * 1000;
 
 async function checkPoints(walletAddress) {
   try {
-    const response = await axios.get(`${API_POINTS}/${walletAddress}`);
+    console.log(`🔍 Checking points for wallet: ${walletAddress}`);
+    const response = await axios.post(API_POINTS, { wallet_address: walletAddress });
     const points = response.data?.points || 0;
     console.log(`🏆 [${walletAddress}] Current points: ${points}`);
   } catch (error) {
-    console.error(`❌ [${walletAddress}] Failed to check points:`, error.message);
+    console.error(`❌ [${walletAddress}] Failed to check points:`, error.response?.data || error.message);
   }
 }
 
 async function checkIn(walletAddress) {
   try {
-    const statusResponse = await axios.get(`${API_POINTS_HISTORY}/${walletAddress}`);
+    const statusResponse = await axios.post(API_POINTS_HISTORY, { wallet_address: walletAddress });
     if (statusResponse.data?.data?.points_details) {
       console.log(`✅ [${walletAddress}] Already checked in today! Skipping check-in...`);
     } else {
@@ -42,7 +43,7 @@ async function checkIn(walletAddress) {
 
     await checkPoints(walletAddress);
   } catch (error) {
-    console.error(`❌ [${walletAddress}] Error during login process:`, error.message);
+    console.error(`❌ [${walletAddress}] Error during login process:`, error.response?.data || error.message);
   }
 }
 
