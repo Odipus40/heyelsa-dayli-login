@@ -1,12 +1,11 @@
 const axios = require("axios");
 const ethers = require("ethers");
-const dotenv = require("dotenv");
-require('colors');
 const { displayHeader } = require('./helpers');
+const dotenv = require("dotenv");
 
 dotenv.config();
 
-const API_LOGIN = "https://app.heyelsa.ai/login";
+const API_LOGIN = "https://app.heyelsa.ai/login?_rsc=1dz8a";
 const API_POINTS = "https://app.heyelsa.ai/api/points";
 const API_POINTS_HISTORY = "https://app.heyelsa.ai/api/points_history";
 
