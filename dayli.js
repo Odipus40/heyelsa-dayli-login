@@ -8,7 +8,7 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-const API_URL = 'https://app.heyelsa.ai/login';
+const API_URL = 'https://app.heyelsa.ai/api/points';
 const WAIT_TIME = (24 * 60 + 5) * 60 * 1000;
 
 const TASKS = [{ id: 0, name: "login" }];
