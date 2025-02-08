@@ -19,7 +19,7 @@ async function checkStatus(address) {
   const payload = {
     query: `
       query GetUserStatus($address: String!) {
-        evm_address(address: $address) {
+        points(address: $address) {
           points
           referrals_code
         }
@@ -54,7 +54,7 @@ async function runTask(address, task) {
   const payload = {
     query: `
       mutation UpdateAirdropTaskStatus($input: UpdateTaskStatusInputData!) {
-        evm_address {
+        points {
           updateTaskStatus(input: $input) {
             success
             progress {
@@ -76,8 +76,8 @@ async function runTask(address, task) {
     });
 
     const data = response.data;
-    if (data.data && data.data.evm_address.updateTaskStatus.success) {
-      const { completedAt } = data.data.evm_address.updateTaskStatus.progress;
+    if (data.data && data.data.points.updateTaskStatus.success) {
+      const { completedAt } = data.data.points.updateTaskStatus.progress;
       console.log(`➡️ Running task: ${task.name}`);
       console.log(`✅ Task "${task.name}" completed successfully at ${new Date(completedAt)}`.green.bold);
     } else {
