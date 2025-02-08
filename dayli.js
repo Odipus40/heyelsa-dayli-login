@@ -1,89 +1,89 @@
-const axios = require('axios');
-const readline = require('readline');
-require('colors');
-const { displayHeader } = require('./helpers');
+const axios = require("axios");
+const ethers = require("ethers");
+const dotenv = require("dotenv");
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+dotenv.config();
 
-const API_URL = 'https://api.heyelsa.ai/api/point'; // Ganti dengan URL API yang benar
-const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+const API_LOGIN = "https://app.heyelsa.ai/login";
+const API_POINTS = "https://app.heyelsa.ai/api/points";
+const API_POINTS_HISTORY = "https://app.heyelsa.ai/api/points_history";
 
-const TASKS = [{ id: 1, name: "Daily Login" }];
+const PRIVATE_KEYS = process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(",") : [];
+if (PRIVATE_KEYS.length === 0) {
+  console.error("❌ No private keys found in .env file! Please add PRIVATE_KEYS.");
+  process.exit(1);
+}
 
-async function checkStatus(address) {
+const CHECKIN_INTERVAL_SUCCESS = 8 * 60 * 60 * 1000;
+const CHECKIN_INTERVAL_FAIL = 8 * 60 * 60 * 1000;
+const MAX_RETRY_ATTEMPTS = 5;
+
+async function checkPoints(walletAddress) {
   try {
-    const response = await axios.post(API_URL + "/status", { address }, { points }, { address }
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const user = response.data.user;
-    if (!user) {
-      console.log('❌ User not found or error occurred.'.red);
-      return;
-    }
-
-    console.log(`\n💳 Address: ${user.address}`);
-    console.log(`💻 Status: ${user.verifiedStatus === "IS_FULLY_VERIFIED" ? "VERIFIED" : user.verifiedStatus}`);
-    console.log(`🏆 Rank: ${user.rank}`);
-    console.log(`💰 Points: ${user.points}`);
-    
-    if (user.referrals) {
-      console.log(`👥 Total Referrals: ${user.referrals.totalCount}`);
-      console.log(`💎 Referral Points: ${user.referrals.points}`);
-      console.log(`🏅 Referral Rank: ${user.referrals.rank}`);
-    }
-
-    console.log('\n');
+    const response = await axios.get(`${API_POINTS}${walletAddress}`);
+    const points = response.data?.points || 0;
+    console.log(`🏆 [${walletAddress}] Current points: ${points}`);
   } catch (error) {
-    console.error('⚠️ Error checking status:', error.response?.data || error.message);
+    console.error(`❌ [${walletAddress}] Failed to check points:`, error.message);
   }
 }
 
-async function runTask(address, task) {
-  try {
-    const response = await axios.post(API_URL + "/complete-task", { address, taskID: task.id }, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+async function attemptCheckIn(walletAddress) {
+  let attempts = 0;
+  while (attempts < MAX_RETRY_ATTEMPTS) {
+    try {
+      const response = await axios.post(API_LOGIN + walletAddress);
+      const data = response.data;
 
-    if (response.data.success) {
-      console.log(`✅ Task "${task.name}" completed successfully.`);
+      if (data?.walletId && data?.points !== undefined && data?.createdAt && data?.id) {
+        console.log(`🎉 [${walletAddress}] Check-in successful!`);
+        return true;
+      } else {
+        console.log(`⚠️ [${walletAddress}] Check-in response:`, data);
+      }
+    } catch (error) {
+      console.error(`⚠️ [${walletAddress}] Check-in attempt ${attempts + 1} failed:`, error.message);
+    }
+    attempts++;
+    await new Promise((resolve) => setTimeout(resolve, 2500)); 
+  }
+  console.log(`❌ [${walletAddress}] Check-in failed after ${MAX_RETRY_ATTEMPTS} attempts.`);
+  return false;
+}
+
+async function checkIn(walletAddress) {
+  try {
+    const statusResponse = await axios.get(API_POINTS_HISTORY + walletAddress);
+    if (statusResponse.data?.data?.points_details) {
+      console.log(`✅ [${walletAddress}] Already checked in today! Skipping check-in...`);
     } else {
-      console.log(`❌ Task "${task.name}" failed. Check the status or try again.`);
+      console.log(`🟡 [${walletAddress}] Not checked in yet. Attempting check-in...`);
+      const success = await attemptCheckIn(walletAddress);
+      if (!success) {
+        console.log(`❌ [${walletAddress}] Check-in failed. Proceeding to check points...`);
+      }
     }
+
+    await checkPoints(walletAddress);
   } catch (error) {
-    console.error(`⚠️ Error running task "${task.name}":`, error.response?.data || error.message);
+    console.error(`❌ [${walletAddress}] Error during check-in process:`, error.message);
   }
 }
 
-async function startDailyTasks(address) {
+async function main() {
   while (true) {
-    await checkStatus(address);
-    console.log('🚀 Starting daily tasks...\n'.blue.bold);
-
-    for (const task of TASKS) {
-      await runTask(address, task);
+    console.log("\n⏳ Starting Daily Login Process...");
+    let success = true;
+    for (const privateKey of PRIVATE_KEYS) {
+      const wallet = new ethers.Wallet(privateKey);
+      const walletSuccess = await checkIn(wallet.address);
+      if (!walletSuccess) success = false;
     }
 
-    console.log('\n🎉 All tasks completed for today.'.green.bold);
-    console.log('⏳ Waiting 24 hours before the next cycle...\n'.yellow);
-    await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
+    const delay = success ? CHECKIN_INTERVAL_SUCCESS : CHECKIN_INTERVAL_FAIL;
+    console.log(`🕖 Waiting ${delay / (60 * 60 * 1000)} hours before the next check-in...`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
 
-rl.question('🔑 Enter your address: '.cyan, (address) => {
-  if (!address) {
-    console.log('⚠️ Address cannot be empty!'.red.bold);
-    rl.close();
-    return;
-  }
-
-  rl.close();
-  startDailyTasks(address);
-});
+main().catch(console.error);
