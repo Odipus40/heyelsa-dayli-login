@@ -21,7 +21,7 @@ async function checkPoints(walletAddress) {
   try {
     console.log(`🔍 Checking points for wallet: ${walletAddress}`);
     const response = await axios.post(API_POINTS, { wallet_address: walletAddress });
-    const points = response.data?.points || 0;
+    const points = response.data?.evm_address || 0;
     console.log(`🏆 [${walletAddress}] Current points: ${points}`);
   } catch (error) {
     console.error(`❌ [${walletAddress}] Failed to check points:`, error.response?.data || error.message);
