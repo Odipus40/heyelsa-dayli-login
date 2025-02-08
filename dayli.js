@@ -18,7 +18,17 @@ const CHECKIN_INTERVAL_FAIL = 8 * 60 * 60 * 1000;
 async function login(walletAddress) {
   try {
     console.log(`🔍 Logging in for wallet: ${walletAddress}`);
-    const response = await axios.post(API_LOGIN, { wallet_address: walletAddress });
+    const response = await axios.post(
+      API_LOGIN,
+      { wallet_address: walletAddress },
+      {
+        headers: {
+          'Content-Type': 'text/x-component',
+          'Authorization': `Bearer ${process.env.API_TOKEN || ''}`,
+          'Cookie': process.env.COOKIE || ''
+        }
+      }
+    );
     const success = response.data?.success || false;
     console.log(success ? `✅ [${walletAddress}] Login successful.` : `❌ [${walletAddress}] Login failed.`);
     return success;
