@@ -1,5 +1,6 @@
 const axios = require("axios");
 const ethers = require("ethers");
+const { displayHeader } = require('./helpers');
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -22,44 +23,35 @@ async function checkPoints(walletAddress) {
     const response = await axios.post(API_POINTS, { wallet_address: walletAddress });
     const points = response.data?.points || 0;
     console.log(`🏆 [${walletAddress}] Current points: ${points}`);
-    return points;
   } catch (error) {
     console.error(`❌ [${walletAddress}] Failed to check points:`, error.response?.data || error.message);
-    return 0;
   }
 }
 
 async function checkIn(walletAddress) {
   try {
-    const statusResponse = await axios.get(`${API_POINTS_HISTORY}?wallet_address=${walletAddress}`);
+    const statusResponse = await axios.post(API_POINTS_HISTORY, { wallet_address: walletAddress });
     if (statusResponse.data?.data?.points_details) {
-      console.log(`✅ [${walletAddress}] Already dayli login today!`);
-      return true;
-    }
-
-    console.log(`🟡 [${walletAddress}] Dayli login failed. Attempting check-in...`);
-    const pointsBefore = await checkPoints(walletAddress);
-
-    if (pointsBefore > 0) {
-      console.log(`✅ [${walletAddress}] Check-in successful.`);
-      return true;
+      console.log(`✅ [${walletAddress}] Already checked in today! Skipping check-in...`);
     } else {
-      console.log(`❌ [${walletAddress}] Check-in failed.`);
-      return false;
+      console.log(`🟡 [${walletAddress}] Not checked in yet. Attempting check-in...`);
+      const success = await checkPoints(walletAddress);
+      if (!success) {
+        console.log(`❌ [${walletAddress}] Check-in failed. Proceeding to check points...`);
+      }
     }
+
+    await checkPoints(walletAddress);
   } catch (error) {
     console.error(`❌ [${walletAddress}] Error during login process:`, error.response?.data || error.message);
-    return false;
   }
 }
 
 async function main() {
   try {
-    let attempts = 0;
-    while (attempts < 3) {
+    while (true) {
       console.log("\n⏳ Starting Daily Login Process...");
       let success = true;
-
       for (const privateKey of PRIVATE_KEYS) {
         try {
           const wallet = new ethers.Wallet(privateKey);
@@ -71,17 +63,10 @@ async function main() {
         }
       }
 
-      if (success) {
-        console.log("✅ All wallets checked in successfully.");
-        break;
-      } else {
-        attempts++;
-        console.log(`🔄 Retrying in 8 hours... (Attempt ${attempts}/3)`);
-        await new Promise((resolve) => setTimeout(resolve, CHECKIN_INTERVAL_FAIL));
-      }
+      const delay = success ? CHECKIN_INTERVAL_SUCCESS : CHECKIN_INTERVAL_FAIL;
+      console.log(`🕖 Waiting ${delay / (60 * 60 * 1000)} hours before the next check-in...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
-
-    console.log("🚨 Max attempts reached. Stopping script.");
   } catch (error) {
     console.error("🚨 Critical error in main process:", error);
   }
