@@ -1,65 +1,135 @@
-const axios = require("axios");
-const ethers = require("ethers");
-const dotenv = require("dotenv");
+const axios = require('axios');
+const readline = require('readline');
+require('colors');
+const { displayHeader } = require('./helpers');
 
-dotenv.config();
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-const API_LOGIN = "https://app.heyelsa.ai/login?_rsc=1dz8a";
+const API_URL = 'https://app.heyelsa.ai/login';
+const WAIT_TIME = (24 * 60 + 5) * 60 * 1000;
 
-const PRIVATE_KEYS = process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(",") : [];
-if (PRIVATE_KEYS.length === 0) {
-  console.error("❌ No private keys found in .env file! Please add PRIVATE_KEYS.");
-  process.exit(1);
-}
+const TASKS = [
+  { id: 0, name: "login" },
+];
 
-const CHECKIN_INTERVAL_SUCCESS = 8 * 60 * 60 * 1000;
-const CHECKIN_INTERVAL_FAIL = 8 * 60 * 60 * 1000;
+displayHeader();
 
-async function login(walletAddress) {
-  try {
-    console.log(`🔍 Logging in for wallet: ${walletAddress}`);
-    const response = await axios.post(
-      API_LOGIN,
-      { wallet_address: walletAddress },
-      {
-        headers: {
-          'Content-Type': 'text/x-component',
-          'Cookie': process.env.COOKIE || ''
+async function checkStatus(address) {
+  const payload = {
+    query: `
+        evm_address {
+            points
+            referrals_code
+            }
+          }
         }
       }
-    );
-    const success = response.data?.success || false;
-    console.log(success ? `✅ [${walletAddress}] Login successful.` : `❌ [${walletAddress}] Login failed.`);
-    return success;
+    `,
+    variables: {
+      filter: { evm_address },
+    },
+  };
+
+  try {
+    const response = await axios.post(API_URL, payload, {
+      headers: {
+        'Content-Type': 'text/x-component',
+      },
+    });
+
+    const user = response.data.data.evm_address;
+    if (!user) {
+      console.log('❌ User not found or error occurred.'.red);
+      return;
+    }
+
+    console.log(`\n💳 Address: ${user.address}`);
+    console.log(`💰 Points: ${user.points}`);
+    console.log(`🏅 Referrals: ${user.referral_code}`);
+    if (user.referral_code) {
+      console.log(`👥 Total Referrals: ${user.referral_code.totalCount}`);
+      console.log(`💎 Referral Points: ${user.referrals.points}`);
+      console.log(`🏅 Referral Rank: ${user.referrals.rank}`);
+    }
+
+    console.log('\n');
   } catch (error) {
-    console.error(`❌ [${walletAddress}] Failed to login:`, error.response?.data || error.message);
-    return false;
+    console.error('⚠️ Error checking status:', error.response?.data || error.message);
   }
 }
 
-async function main() {
-  try {
-    while (true) {
-      console.log("\n⏳ Starting Daily Login Process...");
-      let success = true;
-      for (const privateKey of PRIVATE_KEYS) {
-        try {
-          const wallet = new ethers.Wallet(privateKey);
-          const walletSuccess = await login(wallet.address);
-          if (!walletSuccess) success = false;
-        } catch (error) {
-          console.error(`❌ Error processing wallet ${privateKey}:`, error.message);
-          success = false;
+async function runTask(address, task) {
+  const payload = {
+    query: `
+      mutation UpdateAirdropTaskStatus($input: UpdateTaskStatusInputData!) {
+        evm_address {
+          updateTaskStatus(input: $input) {
+            success
+            progress {
+              isCompleted
+              completedAt
+            }
+          }
         }
       }
+    `,
+    variables: {
+      input: {
+        address,
+        points,
+        reffeal_code,
+      },
+    },
+  };
 
-      const delay = success ? CHECKIN_INTERVAL_SUCCESS : CHECKIN_INTERVAL_FAIL;
-      console.log(`🕖 Waiting ${delay / (60 * 60 * 1000)} hours before the next login attempt...`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
+  try {
+    const response = await axios.post(API_URL, payload, {
+      headers: {
+        'Content-Type': 'text/x-component',
+      },
+    });
+
+    const data = response.data;
+    if (data.data && data.data.evm_address.updateTaskStatus.success) {
+      const { completedAt } = data.data.evm_address.updateTaskStatus.progress;
+      console.log(`➡️  Running task: ${task.name}`);
+      console.log(`✅ Task "${task.name}"`.green.bold + ` completed successfully at `.green.bold + `${new Date(completedAt)}`.green.bold);
+    } else {
+      console.log(`➡️ Running task: ${task.name}`);
+      console.log(`❌ Task "${task.name}" failed. Check the status or try again.`.red);
     }
   } catch (error) {
-    console.error("🚨 Critical error in main process:", error);
+    console.error(`⚠️ An error occurred while running task "${task.name}":`, error.response?.data || error.message);
   }
 }
 
-main().catch(console.error);
+async function startDailyTasks(address) {
+  while (true) {
+
+    await checkStatus(address);
+
+    console.log('🚀 Starting daily tasks...\n'.blue.bold);
+
+    for (const task of TASKS) {
+      await runTask(address, task);
+    }
+
+    console.log('\n🎉 All tasks completed for today.'.green.bold);
+    console.log('⏳ Waiting 24 hours before the next cycle...\n'.yellow);
+    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
+  }
+}
+
+rl.question('🔑 Enter your address: '.cyan, (address) => {
+  if (!address) {
+    console.log('⚠️ Address cannot be empty!'.red.bold);
+    rl.close();
+    return;
+  }
+
+  rl.close();
+  startDailyTasks(address);
+});
