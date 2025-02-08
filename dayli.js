@@ -1,6 +1,8 @@
 const axios = require("axios");
 const ethers = require("ethers");
 const dotenv = require("dotenv");
+require('colors');
+const { displayHeader } = require('./helpers');
 
 dotenv.config();
 
