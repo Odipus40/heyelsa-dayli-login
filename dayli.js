@@ -21,7 +21,7 @@ const MAX_RETRY_ATTEMPTS = 5;
 
 async function checkPoints(walletAddress) {
   try {
-    const response = await axios.get(`${API_POINTS}${walletAddress}`);
+    const response = await axios.post(`${API_POINTS}${walletAddress}`);
     const points = response.data?.points || 0;
     console.log(`🏆 [${walletAddress}] Current points: ${points}`);
   } catch (error) {
