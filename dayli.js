@@ -35,15 +35,15 @@ async function checkIn(walletAddress) {
       console.log(`✅ [${walletAddress}] Already checked in today! Skipping check-in...`);
     } else {
       console.log(`🟡 [${walletAddress}] Not checked in yet. Attempting check-in...`);
-      const success = await attemptCheckIn(walletAddress);
+      const success = await points(walletAddress);
       if (!success) {
         console.log(`❌ [${walletAddress}] Check-in failed. Proceeding to check points...`);
       }
     }
 
-    await checkPoints(walletAddress);
+    await points(walletAddress);
   } catch (error) {
-    console.error(`❌ [${walletAddress}] Error during check-in process:`, error.message);
+    console.error(`❌ [${walletAddress}] Error during login process:`, error.message);
   }
 }
 
@@ -53,7 +53,7 @@ async function main() {
     let success = true;
     for (const privateKey of PRIVATE_KEYS) {
       const wallet = new ethers.Wallet(privateKey);
-      const walletSuccess = await checkIn(wallet.address);
+      const walletSuccess = await points(wallet.address);
       if (!walletSuccess) success = false;
     }
 
