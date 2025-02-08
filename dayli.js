@@ -1,120 +1,55 @@
-const axios = require('axios');
-const readline = require('readline');
-require('colors');
+const axios = require("axios");
+const ethers = require("ethers");
 const { displayHeader } = require('./helpers');
+const dotenv = require("dotenv");
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+dotenv.config();
 
-const API_URL = 'https://app.heyelsa.ai/api/points';
-const WAIT_TIME = (24 * 60 + 5) * 60 * 1000;
+const API_LOGIN = "https://app.heyelsa.ai/login";
 
-const TASKS = [{ id: 0, name: "login" }];
+const PRIVATE_KEYS = process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(",") : [];
+if (PRIVATE_KEYS.length === 0) {
+  console.error("❌ No private keys found in .env file! Please add PRIVATE_KEYS.");
+  process.exit(1);
+}
 
-displayHeader();
+const CHECKIN_INTERVAL_SUCCESS = 8 * 60 * 60 * 1000;
+const CHECKIN_INTERVAL_FAIL = 8 * 60 * 60 * 1000;
 
-async function checkStatus(address) {
-  const payload = {
-    query: `
-      query GetUserStatus($address: String!) {
-        points(address: $address) {
-          points
-          referrals_code
-        }
-      }
-    `,
-    variables: { address },
-  };
-
+async function login(walletAddress) {
   try {
-    const response = await axios.post(API_URL, payload, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const user = response.data.data.evm_address;
-    if (!user) {
-      console.log('❌ User not found or error occurred.'.red);
-      return null;
-    }
-
-    console.log(`\n💳 Address: ${address}`);
-    console.log(`💰 Points: ${user.points}`);
-    console.log(`🏅 Referrals Code: ${user.referrals_code}\n`);
-
-    return user;
+    console.log(`🔍 Checking points for wallet: ${walletAddress}`);
+    const response = await axios.post(API_LOGIN, { wallet_address: walletAddress });
+    const points = response.data?.points || 0;
+    console.log(`🏆 [${walletAddress}] Current points: ${points}`);
   } catch (error) {
-    console.error('⚠️ Error checking status:', error.response?.data || error.message);
-    return null;
+    console.error(`❌ [${walletAddress}] Failed to check points:`, error.response?.data || error.message);
   }
 }
 
-async function runTask(address, task) {
-  const payload = {
-    query: `
-      mutation UpdateAirdropTaskStatus($input: UpdateTaskStatusInputData!) {
-        points {
-          updateTaskStatus(input: $input) {
-            success
-            progress {
-              isCompleted
-              completedAt
-            }
+async function main() {
+    try {
+      while (true) {
+        console.log("\n⏳ Starting Daily Login Process...");
+        let success = true;
+        for (const privateKey of PRIVATE_KEYS) {
+          try {
+            const wallet = new ethers.Wallet(privateKey);
+            const walletSuccess = await checkIn(wallet.address);
+            if (!walletSuccess) success = false;
+          } catch (error) {
+            console.error(`❌ Error processing wallet ${privateKey}:`, error.message);
+            success = false;
           }
         }
+  
+        const delay = success ? CHECKIN_INTERVAL_SUCCESS : CHECKIN_INTERVAL_FAIL;
+        console.log(`🕖 Waiting ${delay / (60 * 60 * 1000)} hours before the next check-in...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
-    `,
-    variables: {
-      input: { address },
-    },
-  };
-
-  try {
-    const response = await axios.post(API_URL, payload, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const data = response.data;
-    if (data.data && data.data.points.updateTaskStatus.success) {
-      const { completedAt } = data.data.points.updateTaskStatus.progress;
-      console.log(`➡️ Running task: ${task.name}`);
-      console.log(`✅ Task "${task.name}" completed successfully at ${new Date(completedAt)}`.green.bold);
-    } else {
-      console.log(`➡️ Running task: ${task.name}`);
-      console.log(`❌ Task "${task.name}" failed. Check the status or try again.`.red);
+    } catch (error) {
+      console.error("🚨 Critical error in main process:", error);
     }
-  } catch (error) {
-    console.error(`⚠️ An error occurred while running task "${task.name}":`, error.response?.data || error.message);
   }
-}
-
-async function startDailyTasks(address) {
-  while (true) {
-    const user = await checkStatus(address);
-    if (!user) {
-      console.log('⛔ Stopping process due to error.');
-      break;
-    }
-
-    console.log('🚀 Starting daily tasks...\n'.blue.bold);
-    for (const task of TASKS) {
-      await runTask(address, task);
-    }
-
-    console.log('\n🎉 All tasks completed for today.'.green.bold);
-    console.log('⏳ Waiting 24 hours before the next cycle...\n'.yellow);
-    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
-  }
-}
-
-rl.question('🔑 Enter your address: '.cyan, (address) => {
-  if (!address.trim()) {
-    console.log('⚠️ Address cannot be empty!'.red.bold);
-    rl.close();
-    return;
-  }
-
-  rl.close();
-  startDailyTasks(address);
-});
+  
+  main().catch(console.error);
