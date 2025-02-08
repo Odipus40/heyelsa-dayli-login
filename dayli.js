@@ -16,11 +16,10 @@ if (PRIVATE_KEYS.length === 0) {
 
 const CHECKIN_INTERVAL_SUCCESS = 8 * 60 * 60 * 1000;
 const CHECKIN_INTERVAL_FAIL = 8 * 60 * 60 * 1000;
-const MAX_RETRY_ATTEMPTS = 5;
 
 async function checkPoints(walletAddress) {
   try {
-    const response = await axios.post(`${API_POINTS}${walletAddress}`);
+    const response = await axios.get(`${API_POINTS}/${walletAddress}`);
     const points = response.data?.points || 0;
     console.log(`🏆 [${walletAddress}] Current points: ${points}`);
   } catch (error) {
@@ -30,36 +29,45 @@ async function checkPoints(walletAddress) {
 
 async function checkIn(walletAddress) {
   try {
-    const statusResponse = await axios.post(API_POINTS_HISTORY + walletAddress);
+    const statusResponse = await axios.get(`${API_POINTS_HISTORY}/${walletAddress}`);
     if (statusResponse.data?.data?.points_details) {
       console.log(`✅ [${walletAddress}] Already checked in today! Skipping check-in...`);
     } else {
       console.log(`🟡 [${walletAddress}] Not checked in yet. Attempting check-in...`);
-      const success = await points(walletAddress);
+      const success = await checkPoints(walletAddress);
       if (!success) {
         console.log(`❌ [${walletAddress}] Check-in failed. Proceeding to check points...`);
       }
     }
 
-    await points(walletAddress);
+    await checkPoints(walletAddress);
   } catch (error) {
     console.error(`❌ [${walletAddress}] Error during login process:`, error.message);
   }
 }
 
 async function main() {
-  while (true) {
-    console.log("\n⏳ Starting Daily Login Process...");
-    let success = true;
-    for (const privateKey of PRIVATE_KEYS) {
-      const wallet = new ethers.Wallet(privateKey);
-      const walletSuccess = await points(wallet.address);
-      if (!walletSuccess) success = false;
-    }
+  try {
+    while (true) {
+      console.log("\n⏳ Starting Daily Login Process...");
+      let success = true;
+      for (const privateKey of PRIVATE_KEYS) {
+        try {
+          const wallet = new ethers.Wallet(privateKey);
+          const walletSuccess = await checkIn(wallet.address);
+          if (!walletSuccess) success = false;
+        } catch (error) {
+          console.error(`❌ Error processing wallet ${privateKey}:`, error.message);
+          success = false;
+        }
+      }
 
-    const delay = success ? CHECKIN_INTERVAL_SUCCESS : CHECKIN_INTERVAL_FAIL;
-    console.log(`🕖 Waiting ${delay / (60 * 60 * 1000)} hours before the next check-in...`);
-    await new Promise((resolve) => setTimeout(resolve, delay));
+      const delay = success ? CHECKIN_INTERVAL_SUCCESS : CHECKIN_INTERVAL_FAIL;
+      console.log(`🕖 Waiting ${delay / (60 * 60 * 1000)} hours before the next check-in...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  } catch (error) {
+    console.error("🚨 Critical error in main process:", error);
   }
 }
 
