@@ -5,7 +5,6 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const API_LOGIN = "https://app.heyelsa.ai/login?_rsc=1dz8a";
 const API_POINTS = "https://app.heyelsa.ai/api/points";
 const API_POINTS_HISTORY = "https://app.heyelsa.ai/api/points_history";
 
@@ -27,29 +26,6 @@ async function checkPoints(walletAddress) {
   } catch (error) {
     console.error(`❌ [${walletAddress}] Failed to check points:`, error.message);
   }
-}
-
-async function attemptCheckIn(walletAddress) {
-  let attempts = 0;
-  while (attempts < MAX_RETRY_ATTEMPTS) {
-    try {
-      const response = await axios.post(API_LOGIN + walletAddress);
-      const data = response.data;
-
-      if (data?.walletId && data?.points !== undefined && data?.createdAt && data?.id) {
-        console.log(`🎉 [${walletAddress}] Check-in successful!`);
-        return true;
-      } else {
-        console.log(`⚠️ [${walletAddress}] Check-in response:`, data);
-      }
-    } catch (error) {
-      console.error(`⚠️ [${walletAddress}] Check-in attempt ${attempts + 1} failed:`, error.message);
-    }
-    attempts++;
-    await new Promise((resolve) => setTimeout(resolve, 2500)); 
-  }
-  console.log(`❌ [${walletAddress}] Check-in failed after ${MAX_RETRY_ATTEMPTS} attempts.`);
-  return false;
 }
 
 async function checkIn(walletAddress) {
