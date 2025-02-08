@@ -11,53 +11,42 @@ const rl = readline.createInterface({
 const API_URL = 'https://app.heyelsa.ai/login';
 const WAIT_TIME = (24 * 60 + 5) * 60 * 1000;
 
-const TASKS = [
-  { id: 0, name: "login" },
-];
+const TASKS = [{ id: 0, name: "login" }];
 
 displayHeader();
 
 async function checkStatus(address) {
   const payload = {
     query: `
-        evm_address {
-            points
-            referrals_code
-            }
-          }
+      query GetUserStatus($address: String!) {
+        evm_address(address: $address) {
+          points
+          referrals_code
         }
       }
     `,
-    variables: {
-      filter: { evm_address },
-    },
+    variables: { address },
   };
 
   try {
     const response = await axios.post(API_URL, payload, {
-      headers: {
-        'Content-Type': 'text/x-component',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
 
     const user = response.data.data.evm_address;
     if (!user) {
       console.log('❌ User not found or error occurred.'.red);
-      return;
+      return null;
     }
 
-    console.log(`\n💳 Address: ${user.address}`);
+    console.log(`\n💳 Address: ${address}`);
     console.log(`💰 Points: ${user.points}`);
-    console.log(`🏅 Referrals: ${user.referral_code}`);
-    if (user.referral_code) {
-      console.log(`👥 Total Referrals: ${user.referral_code.totalCount}`);
-      console.log(`💎 Referral Points: ${user.referrals.points}`);
-      console.log(`🏅 Referral Rank: ${user.referrals.rank}`);
-    }
+    console.log(`🏅 Referrals Code: ${user.referrals_code}\n`);
 
-    console.log('\n');
+    return user;
   } catch (error) {
     console.error('⚠️ Error checking status:', error.response?.data || error.message);
+    return null;
   }
 }
 
@@ -77,26 +66,20 @@ async function runTask(address, task) {
       }
     `,
     variables: {
-      input: {
-        address,
-        points,
-        reffeal_code,
-      },
+      input: { address },
     },
   };
 
   try {
     const response = await axios.post(API_URL, payload, {
-      headers: {
-        'Content-Type': 'text/x-component',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
 
     const data = response.data;
     if (data.data && data.data.evm_address.updateTaskStatus.success) {
       const { completedAt } = data.data.evm_address.updateTaskStatus.progress;
-      console.log(`➡️  Running task: ${task.name}`);
-      console.log(`✅ Task "${task.name}"`.green.bold + ` completed successfully at `.green.bold + `${new Date(completedAt)}`.green.bold);
+      console.log(`➡️ Running task: ${task.name}`);
+      console.log(`✅ Task "${task.name}" completed successfully at ${new Date(completedAt)}`.green.bold);
     } else {
       console.log(`➡️ Running task: ${task.name}`);
       console.log(`❌ Task "${task.name}" failed. Check the status or try again.`.red);
@@ -108,11 +91,13 @@ async function runTask(address, task) {
 
 async function startDailyTasks(address) {
   while (true) {
-
-    await checkStatus(address);
+    const user = await checkStatus(address);
+    if (!user) {
+      console.log('⛔ Stopping process due to error.');
+      break;
+    }
 
     console.log('🚀 Starting daily tasks...\n'.blue.bold);
-
     for (const task of TASKS) {
       await runTask(address, task);
     }
@@ -124,7 +109,7 @@ async function startDailyTasks(address) {
 }
 
 rl.question('🔑 Enter your address: '.cyan, (address) => {
-  if (!address) {
+  if (!address.trim()) {
     console.log('⚠️ Address cannot be empty!'.red.bold);
     rl.close();
     return;
