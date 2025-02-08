@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const API_LOGIN = "https://app.heyelsa.ai/login";
+const API_LOGIN = "https://app.heyelsa.ai/login?_rsc=1dz8a";
 
 const PRIVATE_KEYS = process.env.PRIVATE_KEYS ? process.env.PRIVATE_KEYS.split(",") : [];
 if (PRIVATE_KEYS.length === 0) {
