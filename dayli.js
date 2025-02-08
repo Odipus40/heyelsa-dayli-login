@@ -30,7 +30,7 @@ async function checkPoints(walletAddress) {
 
 async function checkIn(walletAddress) {
   try {
-    const statusResponse = await axios.get(API_POINTS_HISTORY + walletAddress);
+    const statusResponse = await axios.post(API_POINTS_HISTORY + walletAddress);
     if (statusResponse.data?.data?.points_details) {
       console.log(`✅ [${walletAddress}] Already checked in today! Skipping check-in...`);
     } else {
