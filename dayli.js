@@ -24,7 +24,6 @@ async function login(walletAddress) {
       {
         headers: {
           'Content-Type': 'text/x-component',
-          'Authorization': `Bearer ${process.env.API_TOKEN || ''}`,
           'Cookie': process.env.COOKIE || ''
         }
       }
