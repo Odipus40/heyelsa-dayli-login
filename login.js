@@ -1,5 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
+const readline = require('readline');
+require('colors');
 const { displayHeader } = require('./helpers'); // Import fungsi dari helpers.js
 
 const loginUrl = 'https://app.heyelsa.ai/login';
