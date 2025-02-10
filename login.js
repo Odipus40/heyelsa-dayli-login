@@ -9,22 +9,26 @@ const login = async () => {
         console.error("Cookie tidak ditemukan. Pastikan file .env telah diisi.");
         return;
     }
-const payload: {
+
+    const payload = {
     "1": {
-        id: string;
-        bound: null;
-    };
+        "bound": null
+    },
     "2": {
-        id: string;
-        bound: null;
-    };
-    "0": (string | string[] | {
-        action: string;
-        options: {
-            onSetAIState: string;
-        };
-    })[];
-}
+        "bound": null
+    },
+    "0": [
+        { 
+            "action": "$F1", 
+            "options": { "onSetAIState": "$F2" } 
+        },
+        [],
+        "Injected",
+        "$undefined",
+        ["Arbitrum", "Base", "Berachain", "Optimism", "Polygon", "BSC", "Berachain", "Hyperliquid"]
+    ]
+};
+
 
     try {
         const response = await axios.get(url, {
