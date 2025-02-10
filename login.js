@@ -61,8 +61,8 @@ const getTotalPoints = async () => {
         console.log("🔍 Debug Response:", response.data); // Debug untuk melihat isi response API
 
         if (response.status === 200) {
-            const totalPoints = response.data.total_points; // Ambil data dari response API
-            console.log(`🎯 Total Poin Saat Ini: ${totalPoints || "Data tidak ditemukan"}`);
+            const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
+            console.log(`🎯 Total Poin Saat Ini: ${totalPoints}`);
         } else {
             console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
         }
