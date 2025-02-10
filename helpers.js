@@ -1,9 +1,4 @@
-async function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function displayHeader() {
-  process.stdout.write('\x1Bc');
+const displayHeader = () => {
   console.log('========================================'.cyan);
   console.log('=        Heyelsa Daily Login Bot       ='.cyan);
   console.log('=     Created by HappyCuanAirdrop      ='.cyan);
@@ -12,7 +7,4 @@ function displayHeader() {
   console.log();
 }
 
-module.exports = {
-  delay,
-  displayHeader,
-};
+module.exports = { displayHeader };
