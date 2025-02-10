@@ -47,7 +47,7 @@ const getTotalPoints = async () => {
 
     try {
         const response = await axios.post(pointsUrl, 
-            { params: { evm_address } }, // Menggunakan payload dengan params
+            { evm_address }, // Payload dengan evm_address
             {
                 headers: {
                     'Cookie': cookie,
@@ -58,9 +58,11 @@ const getTotalPoints = async () => {
             }
         );
 
+        console.log("🔍 Debug Response:", response.data); // Debug untuk melihat isi response API
+
         if (response.status === 200) {
-            const totalPoints = response.data.total_points;
-            console.log(`🎯 Total Poin Saat Ini: ${totalPoints}`);
+            const totalPoints = response.data.total_points; // Ambil data dari response API
+            console.log(`🎯 Total Poin Saat Ini: ${totalPoints || "Data tidak ditemukan"}`);
         } else {
             console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
         }
