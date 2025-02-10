@@ -1,8 +1,9 @@
 require('dotenv').config();
 const axios = require('axios');
 
+// Fungsi login
 const login = async () => {
-    const url = 'https://app.heyelsa.ai/login'; // Pastikan URL ini benar
+    const url = 'https://app.heyelsa.ai/login'; // Pastikan URL benar
     const cookie = process.env.COOKIE;
 
     if (!cookie) {
@@ -10,38 +11,56 @@ const login = async () => {
         return;
     }
 
-    try {
-        console.log("🔹 Mengirim request login...");
+    // Ambil waktu sekarang
+    const now = new Date();
+    const formattedTime = now.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
+    console.log(`\n⏳ [${formattedTime}] Memulai proses login...`);
+
+    try {
         const response = await axios.get(url, {
             headers: {
-                'Cookie': cookie, // Kirim cookie dalam header
-                'User-Agent': 'Mozilla/5.0', // Beberapa server membutuhkan ini
-                'Accept': 'application/json, text/html', // Bisa membantu jika server butuh
+                'Cookie': cookie, 
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json, text/html',
             }
         });
 
-        // Cek apakah response mengandung sesuatu yang bisa memastikan login sukses
         if (response.status === 200) {
-            console.log("✅ Login berhasil!");
+            console.log(`✅ [${formattedTime}] Login berhasil!`);
             
-            // Coba deteksi username atau sesuatu di dalam response
             if (response.data.includes("dashboard") || response.data.includes("Welcome")) {
-                console.log("🔹 Login terdeteksi sebagai sukses.");
+                console.log("🔹 Login Sukses.");
             } else {
-                console.log("⚠️ Login berhasil tetapi tidak dapat memverifikasi apakah sesi valid.");
+                console.log("⚠️ Login berhasil tetapi tidak dapat memverifikasi sesi.");
             }
-
         } else {
-            console.error(`⚠️ Login berhasil tetapi status bukan 200: ${response.status}`);
+            console.error(`⚠️ [${formattedTime}] Login berhasil tetapi status bukan 200: ${response.status}`);
         }
     } catch (error) {
         if (error.response) {
-            console.error(`❌ Login gagal: ${error.response.status}`, error.response.data);
+            console.error(`❌ [${formattedTime}] Login gagal: ${error.response.status}`, error.response.data);
         } else {
-            console.error('❌ Terjadi kesalahan:', error.message);
+            console.error(`❌ [${formattedTime}] Terjadi kesalahan:`, error.message);
         }
     }
 };
 
+// Atur jadwal agar berjalan otomatis setiap hari pada jam tertentu
+const scheduleLogin = () => {
+    const hour = 7;  // Ganti dengan jam yang diinginkan (24 jam format)
+    const minute = 0; // Ganti dengan menit yang diinginkan
+
+    setInterval(() => {
+        const now = new Date();
+        if (now.getHours() === hour && now.getMinutes() === minute) {
+            login();
+        }
+    }, 60 * 1000); // Cek setiap menit
+};
+
+// Jalankan login pertama kali
 login();
+
+// Jalankan otomatis setiap hari
+scheduleLogin();
