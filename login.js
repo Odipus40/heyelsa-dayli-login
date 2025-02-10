@@ -52,32 +52,29 @@ const getPointHistory = async () => {
     console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin untuk address: ${evm_address}...`);
 
     try {
-        const response = await axios.get(historyUrl, {
-            params: { evm_address }, // Menggunakan evm_address sebagai parameter
-            headers: {
-                'Cookie': cookie,
-                'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
+        const response = await axios.post(historyUrl, 
+            { params: { evm_address } }, // Menggunakan payload dengan params
+            {
+                headers: {
+                    'Cookie': cookie,
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
             }
-        });
-
-        console.log("🔎 Debug Response:", JSON.stringify(response.data, null, 2)); // Debugging respons API
+        );
 
         if (response.status === 200) {
             const data = response.data;
 
             if (data.points_details && Array.isArray(data.points_details)) {
                 console.log("🔹 Riwayat Poin:");
-
                 let totalPoints = 0;
                 data.points_details.forEach((entry, index) => {
-                    const date = new Date(entry.created_at_utc).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-                    console.log(`   ${index + 1}. [${date}] - ${entry.activity_type.toUpperCase()} - ${entry.points} poin`);
+                    console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
                     totalPoints += entry.points;
                 });
-
-                console.log(`\n💰 Total Poin untuk ${evm_address}: ${totalPoints}`);
+                console.log(`\n💰 Total Poin: ${totalPoints}`);
             } else {
                 console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
             }
@@ -85,7 +82,7 @@ const getPointHistory = async () => {
             console.error(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
         }
     } catch (error) {
-        console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.message);
+        console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.response?.data || error.message);
     }
 };
 
