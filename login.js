@@ -42,10 +42,11 @@ const login = async () => {
 
 // Fungsi untuk mengambil history poin
 const getPointHistory = async () => {
-    console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin...`);
+    console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin untuk address: ${evm_address}...`);
 
     try {
-        const response = await axios.post(historyUrl, {}, {
+        const response = await axios.get(historyUrl, {
+            params: { evm_address }, // Menggunakan evm_address sebagai parameter
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
@@ -53,6 +54,8 @@ const getPointHistory = async () => {
                 'Content-Type': 'application/json',
             }
         });
+
+        console.log("🔎 Debug Response:", JSON.stringify(response.data, null, 2)); // Debugging respons API
 
         if (response.status === 200) {
             const data = response.data;
@@ -67,7 +70,7 @@ const getPointHistory = async () => {
                     totalPoints += entry.points;
                 });
 
-                console.log(`\n💰 Total Poin: ${totalPoints}`);
+                console.log(`\n💰 Total Poin untuk ${evm_address}: ${totalPoints}`);
             } else {
                 console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
             }
