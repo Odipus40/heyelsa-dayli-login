@@ -23,7 +23,7 @@ const getFormattedTime = () => {
 
 // Fungsi login
 const login = async () => {
-    console.log(`\n⏳ [${getFormattedTime()}] Memulai proses login...`);
+    console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
 
     try {
         const response = await axios.get(loginUrl, {
@@ -35,18 +35,18 @@ const login = async () => {
         });
 
         if (response.status === 200) {
-            console.log(`✅ [${getFormattedTime()}] Login berhasil!`);
+            console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
         } else {
             console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
         }
     } catch (error) {
-        console.error(`❌ [${getFormattedTime()}] Login gagal: ${error.message}`);
+        console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
     }
 };
 
 // Fungsi untuk mengambil total poin dari API `/points`
 const getTotalPoints = async () => {
-    console.log(`\n💰 [${getFormattedTime()}] Mengambil total poin untuk address: ${evm_address}...`);
+    console.log(`\n💰 [${getFormattedTime()}] Points your address: ${evm_address}...`);
 
     try {
         const response = await axios.post(pointsUrl, 
@@ -65,7 +65,7 @@ const getTotalPoints = async () => {
 
         if (response.status === 200) {
             const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
-            console.log(`🎯 Total Poin Saat Ini: ${totalPoints}`);
+            console.log(`🎯 Current Points Total: ${totalPoints}`);
         } else {
             console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
         }
@@ -76,7 +76,7 @@ const getTotalPoints = async () => {
 
 // Fungsi untuk mengambil history poin
 const getPointHistory = async () => {
-    console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin untuk address: ${evm_address}...`);
+    console.log(`\n📌 [${getFormattedTime()}] History your address: ${evm_address}...`);
 
     try {
         const response = await axios.post(historyUrl, 
@@ -113,13 +113,13 @@ const getPointHistory = async () => {
 // Fungsi utama untuk menjalankan semua proses
 const run = async () => {
     displayHeader(); // Menampilkan header sebelum eksekusi lainnya
-    console.log(`\n🚀 [${getFormattedTime()}] Memulai eksekusi otomatis...\n`);
+    console.log(`\n🚀 [${getFormattedTime()}] Starting automatic execution...\n`);
     await login();
     await getTotalPoints(); // Ambil total poin lebih dulu
     await getPointHistory(); // Lalu tampilkan history poin
 
     const nextRun = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    console.log(`\n⏳ Skrip akan berjalan lagi pada: ${nextRun} (WIB)\n`);
+    console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
 };
 
 // Jalankan pertama kali
