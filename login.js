@@ -2,8 +2,8 @@ require('dotenv').config();
 const axios = require('axios');
 
 const loginUrl = 'https://app.heyelsa.ai/login';
-const historyUrl = 'https://app.heyelsa.ai/api/points/history';
-const leaderboardUrl = 'https://app.heyelsa.ai/api/points/leaderboard';
+const historyUrl = 'https://app.heyelsa.ai/api/points/';
+const leaderboardUrl = 'https://app.heyelsa.ai/api/leaderboard';
 
 const cookie = process.env.COOKIE;
 
