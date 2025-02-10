@@ -6,9 +6,10 @@ const historyUrl = 'https://app.heyelsa.ai/api/points_history';
 const leaderboardUrl = 'https://app.heyelsa.ai/api/leaderboard';
 
 const cookie = process.env.COOKIE;
+const evm_address = process.env.EVM_ADDRESS; // Ambil alamat dari .env
 
-if (!cookie) {
-    console.error("❌ Cookie tidak ditemukan. Pastikan file .env telah diisi.");
+if (!cookie || !evm_address) {
+    console.error("❌ Cookie atau EVM_ADDRESS tidak ditemukan. Pastikan file .env telah diisi.");
     process.exit(1);
 }
 
@@ -40,12 +41,13 @@ const login = async () => {
     }
 };
 
-// Fungsi untuk mengambil history poin
+// Fungsi untuk mengambil history poin berdasarkan evm_address
 const getPointHistory = async () => {
-    console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin...`);
+    console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin untuk address: ${evm_address}...`);
 
     try {
-        const response = await axios.post(historyUrl, {}, {
+        const response = await axios.get(historyUrl, {
+            params: { evm_address }, // Menggunakan evm_address sebagai parameter
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
@@ -53,6 +55,8 @@ const getPointHistory = async () => {
                 'Content-Type': 'application/json',
             }
         });
+
+        console.log("🔎 Debug Response:", JSON.stringify(response.data, null, 2)); // Debugging respons API
 
         if (response.status === 200) {
             const data = response.data;
@@ -67,7 +71,7 @@ const getPointHistory = async () => {
                     totalPoints += entry.points;
                 });
 
-                console.log(`\n💰 Total Poin: ${totalPoints}`);
+                console.log(`\n💰 Total Poin untuk ${evm_address}: ${totalPoints}`);
             } else {
                 console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
             }
@@ -84,7 +88,7 @@ const getLeaderboard = async () => {
     console.log(`\n🏆 [${getFormattedTime()}] Mengambil leaderboard...`);
 
     try {
-        const response = await axios.post(leaderboardUrl, {}, {
+        const response = await axios.get(leaderboardUrl, {
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
@@ -95,10 +99,8 @@ const getLeaderboard = async () => {
 
         if (response.status === 200) {
             const data = response.data;
-
             if (data.leaderboard && Array.isArray(data.leaderboard)) {
                 console.log("🔹 Leaderboard:");
-
                 data.leaderboard.forEach((user, index) => {
                     console.log(`   ${index + 1}. ${user.username} - ${user.points} poin`);
                 });
