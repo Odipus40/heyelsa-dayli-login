@@ -6,16 +6,10 @@ const historyUrl = 'https://app.heyelsa.ai/api/points_history';
 const leaderboardUrl = 'https://app.heyelsa.ai/api/leaderboard';
 
 const cookie = process.env.COOKIE;
+const evm_address = process.env.EVM_ADDRESS; // Pastikan address ada di .env
 
-if (!cookie) {
-    console.error("❌ Cookie tidak ditemukan. Pastikan file .env telah diisi.");
-    process.exit(1);
-}
-
-const evm_address = process.env.EVM_ADDRESS; // Pastikan variabel ini ada di .env
-
-if (!evm_address) {
-    console.error("❌ EVM Address tidak ditemukan. Pastikan file .env telah diisi.");
+if (!cookie || !evm_address) {
+    console.error("❌ Cookie atau EVM Address tidak ditemukan. Pastikan file .env telah diisi.");
     process.exit(1);
 }
 
@@ -91,7 +85,7 @@ const getLeaderboard = async () => {
     console.log(`\n🏆 [${getFormattedTime()}] Mengambil leaderboard...`);
 
     try {
-        const response = await axios.post(leaderboardUrl, {}, {
+        const response = await axios.post(leaderboardUrl, {}, { 
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
@@ -102,10 +96,8 @@ const getLeaderboard = async () => {
 
         if (response.status === 200) {
             const data = response.data;
-
             if (data.leaderboard && Array.isArray(data.leaderboard)) {
                 console.log("🔹 Leaderboard:");
-
                 data.leaderboard.forEach((user, index) => {
                     console.log(`   ${index + 1}. ${user.username} - ${user.points} poin`);
                 });
@@ -120,12 +112,20 @@ const getLeaderboard = async () => {
     }
 };
 
-// Jalankan login dan fetch data poin + leaderboard
+// Fungsi utama untuk menjalankan semua proses
 const run = async () => {
+    console.log(`\n🚀 [${getFormattedTime()}] Memulai eksekusi otomatis...\n`);
     await login();
     await getPointHistory();
     await getLeaderboard();
+
+    const nextRun = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    console.log(`\n⏳ Skrip akan berjalan lagi pada: ${nextRun} (WIB)\n`);
 };
 
 // Jalankan pertama kali
 run();
+
+// Jalankan setiap 24 jam sekali
+const intervalTime = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+setInterval(run, intervalTime);
