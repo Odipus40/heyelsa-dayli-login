@@ -6,10 +6,9 @@ const historyUrl = 'https://app.heyelsa.ai/api/points_history';
 const leaderboardUrl = 'https://app.heyelsa.ai/api/leaderboard';
 
 const cookie = process.env.COOKIE;
-const evm_address = process.env.EVM_ADDRESS; // Ambil alamat dari .env
 
-if (!cookie || !evm_address) {
-    console.error("❌ Cookie atau EVM_ADDRESS tidak ditemukan. Pastikan file .env telah diisi.");
+if (!cookie) {
+    console.error("❌ Cookie tidak ditemukan. Pastikan file .env telah diisi.");
     process.exit(1);
 }
 
@@ -41,12 +40,12 @@ const login = async () => {
     }
 };
 
-// Fungsi untuk mengambil history poin berdasarkan evm_address
+// Fungsi untuk mengambil history poin
 const getPointHistory = async () => {
-    console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin untuk address: ${evmAddress}...`);
+    console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin...`);
 
     try {
-        const response = await axios.post(historyUrl, { params: { evm_address: evmAddress } }, {
+        const response = await axios.post(historyUrl, {}, {
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
@@ -55,22 +54,30 @@ const getPointHistory = async () => {
             }
         });
 
-        if (response.status === 200 && response.data.points_details) {
-            console.log("🔹 Riwayat Poin:");
-            let totalPoints = 0;
-            response.data.points_details.forEach((entry, index) => {
-                console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin - ${entry.created_at_utc}`);
-                totalPoints += entry.points;
-            });
-            console.log(`\n💰 Total Poin: ${totalPoints}`);
+        if (response.status === 200) {
+            const data = response.data;
+
+            if (data.points_details && Array.isArray(data.points_details)) {
+                console.log("🔹 Riwayat Poin:");
+
+                let totalPoints = 0;
+                data.points_details.forEach((entry, index) => {
+                    const date = new Date(entry.created_at_utc).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                    console.log(`   ${index + 1}. [${date}] - ${entry.activity_type.toUpperCase()} - ${entry.points} poin`);
+                    totalPoints += entry.points;
+                });
+
+                console.log(`\n💰 Total Poin: ${totalPoints}`);
+            } else {
+                console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
+            }
         } else {
-            console.error("⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.");
+            console.error(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
         }
     } catch (error) {
         console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.message);
     }
 };
-
 
 // Fungsi untuk mengambil leaderboard
 const getLeaderboard = async () => {
@@ -86,13 +93,20 @@ const getLeaderboard = async () => {
             }
         });
 
-        if (response.status === 200 && response.data.leaderboard) {
-            console.log("🔹 Leaderboard:");
-            response.data.leaderboard.forEach((user, index) => {
-                console.log(`   ${index + 1}. ${user.username} - ${user.points} poin`);
-            });
+        if (response.status === 200) {
+            const data = response.data;
+
+            if (data.leaderboard && Array.isArray(data.leaderboard)) {
+                console.log("🔹 Leaderboard:");
+
+                data.leaderboard.forEach((user, index) => {
+                    console.log(`   ${index + 1}. ${user.username} - ${user.points} poin`);
+                });
+            } else {
+                console.error(`⚠️ Leaderboard tidak ditemukan atau tidak dalam format yang diharapkan.`);
+            }
         } else {
-            console.error("⚠️ Leaderboard tidak ditemukan atau tidak dalam format yang diharapkan.");
+            console.error(`⚠️ Gagal mengambil leaderboard, status: ${response.status}`);
         }
     } catch (error) {
         console.error(`❌ Terjadi kesalahan saat mengambil leaderboard:`, error.message);
