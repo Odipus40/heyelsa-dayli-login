@@ -2,7 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 
 const loginUrl = 'https://app.heyelsa.ai/login';
-const historyUrl = 'https://app.heyelsa.ai/api/points_history/';
+const historyUrl = 'https://app.heyelsa.ai/api/points_history';
 const leaderboardUrl = 'https://app.heyelsa.ai/api/leaderboard';
 
 const cookie = process.env.COOKIE;
@@ -55,12 +55,16 @@ const getPointHistory = async () => {
         });
 
         if (response.status === 200) {
-            console.log("🔹 History Poin:");
-            response.data.history.forEach((entry, index) => {
-                console.log(`   ${index + 1}. ${entry.date} - ${entry.points} poin`);
-            });
-
-            console.log(`\n💰 Total Poin: ${response.data.totalPoints}`);
+            const data = response.data;
+            if (data.history && Array.isArray(data.history)) {
+                console.log("🔹 History Poin:");
+                data.history.forEach((entry, index) => {
+                    console.log(`   ${index + 1}. ${entry.date} - ${entry.points} poin`);
+                });
+                console.log(`\n💰 Total Poin: ${data.totalPoints}`);
+            } else {
+                console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
+            }
         } else {
             console.error(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
         }
@@ -84,10 +88,15 @@ const getLeaderboard = async () => {
         });
 
         if (response.status === 200) {
-            console.log("🔹 Leaderboard:");
-            response.data.leaderboard.forEach((user, index) => {
-                console.log(`   ${index + 1}. ${user.username} - ${user.points} poin`);
-            });
+            const data = response.data;
+            if (data.leaderboard && Array.isArray(data.leaderboard)) {
+                console.log("🔹 Leaderboard:");
+                data.leaderboard.forEach((user, index) => {
+                    console.log(`   ${index + 1}. ${user.username} - ${user.points} poin`);
+                });
+            } else {
+                console.error(`⚠️ Leaderboard tidak ditemukan atau tidak dalam format yang diharapkan.`);
+            }
         } else {
             console.error(`⚠️ Gagal mengambil leaderboard, status: ${response.status}`);
         }
