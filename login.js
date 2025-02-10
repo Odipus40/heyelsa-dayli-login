@@ -45,7 +45,7 @@ const getPointHistory = async () => {
     console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin...`);
 
     try {
-        const response = await axios.post(historyUrl, {}, { // Gunakan POST dengan body kosong
+        const response = await axios.post(historyUrl, {}, {
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
@@ -56,12 +56,18 @@ const getPointHistory = async () => {
 
         if (response.status === 200) {
             const data = response.data;
-            if (data.history && Array.isArray(data.history)) {
-                console.log("🔹 History Poin:");
-                data.history.forEach((entry, index) => {
-                    console.log(`   ${index + 1}. ${entry.date} - ${entry.points} poin`);
+
+            if (data.points_details && Array.isArray(data.points_details)) {
+                console.log("🔹 Riwayat Poin:");
+
+                let totalPoints = 0;
+                data.points_details.forEach((entry, index) => {
+                    const date = new Date(entry.created_at_utc).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                    console.log(`   ${index + 1}. [${date}] - ${entry.activity_type.toUpperCase()} - ${entry.points} poin`);
+                    totalPoints += entry.points;
                 });
-                console.log(`\n💰 Total Poin: ${data.totalPoints}`);
+
+                console.log(`\n💰 Total Poin: ${totalPoints}`);
             } else {
                 console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
             }
@@ -78,7 +84,7 @@ const getLeaderboard = async () => {
     console.log(`\n🏆 [${getFormattedTime()}] Mengambil leaderboard...`);
 
     try {
-        const response = await axios.post(leaderboardUrl, {}, { // Gunakan POST dengan body kosong
+        const response = await axios.post(leaderboardUrl, {}, {
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
@@ -89,8 +95,10 @@ const getLeaderboard = async () => {
 
         if (response.status === 200) {
             const data = response.data;
+
             if (data.leaderboard && Array.isArray(data.leaderboard)) {
                 console.log("🔹 Leaderboard:");
+
                 data.leaderboard.forEach((user, index) => {
                     console.log(`   ${index + 1}. ${user.username} - ${user.points} poin`);
                 });
