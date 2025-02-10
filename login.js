@@ -1,5 +1,6 @@
 require('dotenv').config();
 const axios = require('axios');
+const { displayHeader } = require('./helpers'); // Import fungsi dari helpers.js
 
 const loginUrl = 'https://app.heyelsa.ai/login';
 const pointsUrl = 'https://app.heyelsa.ai/api/points'; // API total poin
@@ -109,6 +110,7 @@ const getPointHistory = async () => {
 
 // Fungsi utama untuk menjalankan semua proses
 const run = async () => {
+    displayHeader(); // Menampilkan header sebelum eksekusi lainnya
     console.log(`\n🚀 [${getFormattedTime()}] Memulai eksekusi otomatis...\n`);
     await login();
     await getTotalPoints(); // Ambil total poin lebih dulu
