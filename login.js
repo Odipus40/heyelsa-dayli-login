@@ -1,24 +1,28 @@
+const { ethers } = require('ethers');
 require('dotenv').config();
 const axios = require('axios');
 
 const login = async () => {
-    const url = 'https://app.heyelsa.ai/login'; // Sesuaikan jika berbeda
-    const privateKey = process.env.PRIVATE_KEY; 
+    const url = 'https://app.heyelsa.ai/login'; 
+    const privateKey = process.env.PRIVATE_KEY;
 
     if (!privateKey) {
-        console.error("Private key tidak ditemukan. Pastikan file .env telah diisi.");
+        console.error("Private key tidak ditemukan.");
         return;
     }
 
+    const wallet = new ethers.Wallet(privateKey);
+    const message = "Login to HeyElsa"; 
+    const signature = await wallet.signMessage(message);
+
     const payload = {
-        privateKey: privateKey
+        address: wallet.address,
+        signature: signature
     };
 
     try {
         const response = await axios.post(url, payload, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
 
         console.log('Login berhasil:', response.data);
