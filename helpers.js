@@ -5,7 +5,7 @@ async function delay(ms) {
 function displayHeader() {
   process.stdout.write('\x1Bc');
   console.log('========================================'.cyan);
-  console.log('=        Heyelsa Dayli Login Bot       ='.cyan);
+  console.log('=        Heyelsa Daily Login Bot       ='.cyan);
   console.log('=     Created by HappyCuanAirdrop      ='.cyan);
   console.log('=    https://t.me/HappyCuanAirdrop     ='.cyan);
   console.log('========================================'.cyan);
