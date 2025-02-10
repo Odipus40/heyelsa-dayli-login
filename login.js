@@ -12,6 +12,13 @@ if (!cookie) {
     process.exit(1);
 }
 
+const evm_address = process.env.EVM_ADDRESS; // Pastikan variabel ini ada di .env
+
+if (!evm_address) {
+    console.error("❌ EVM Address tidak ditemukan. Pastikan file .env telah diisi.");
+    process.exit(1);
+}
+
 // Fungsi untuk mendapatkan waktu sekarang (WIB)
 const getFormattedTime = () => {
     return new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
