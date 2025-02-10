@@ -1,9 +1,9 @@
 require('dotenv').config();
 const axios = require('axios');
 
-const loginUrl = 'https://app.heyelsa.ai/login'; // Pastikan URL benar
-const historyUrl = 'https://app.heyelsa.ai/api/points/'; // Cek di Network DevTools jika berbeda
-const leaderboardUrl = 'https://app.heyelsa.ai/api/leaderboard'; // Cek di Network DevTools jika berbeda
+const loginUrl = 'https://app.heyelsa.ai/login';
+const historyUrl = 'https://app.heyelsa.ai/api/points/history';
+const leaderboardUrl = 'https://app.heyelsa.ai/api/points/leaderboard';
 
 const cookie = process.env.COOKIE;
 
@@ -12,7 +12,7 @@ if (!cookie) {
     process.exit(1);
 }
 
-// Fungsi untuk mendapatkan waktu saat ini (WIB)
+// Fungsi untuk mendapatkan waktu sekarang (WIB)
 const getFormattedTime = () => {
     return new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 };
@@ -36,24 +36,21 @@ const login = async () => {
             console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
         }
     } catch (error) {
-        if (error.response) {
-            console.error(`❌ [${getFormattedTime()}] Login gagal: ${error.response.status}`, error.response.data);
-        } else {
-            console.error(`❌ [${getFormattedTime()}] Terjadi kesalahan:`, error.message);
-        }
+        console.error(`❌ [${getFormattedTime()}] Login gagal: ${error.message}`);
     }
 };
 
-// Fungsi untuk mendapatkan history poin
+// Fungsi untuk mengambil history poin
 const getPointHistory = async () => {
     console.log(`\n📌 [${getFormattedTime()}] Mengambil history poin...`);
 
     try {
-        const response = await axios.get(historyUrl, {
+        const response = await axios.post(historyUrl, {}, { // Gunakan POST dengan body kosong
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
                 'Accept': 'application/json',
+                'Content-Type': 'application/json',
             }
         });
 
@@ -72,16 +69,17 @@ const getPointHistory = async () => {
     }
 };
 
-// Fungsi untuk mendapatkan leaderboard
+// Fungsi untuk mengambil leaderboard
 const getLeaderboard = async () => {
     console.log(`\n🏆 [${getFormattedTime()}] Mengambil leaderboard...`);
 
     try {
-        const response = await axios.get(leaderboardUrl, {
+        const response = await axios.post(leaderboardUrl, {}, { // Gunakan POST dengan body kosong
             headers: {
                 'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
                 'Accept': 'application/json',
+                'Content-Type': 'application/json',
             }
         });
 
@@ -105,21 +103,5 @@ const run = async () => {
     await getLeaderboard();
 };
 
-// Atur jadwal otomatis setiap hari pada jam tertentu
-const scheduleLogin = () => {
-    const hour = 7;  // Ganti dengan jam yang diinginkan (24 jam format)
-    const minute = 0; // Ganti dengan menit yang diinginkan
-
-    setInterval(() => {
-        const now = new Date();
-        if (now.getHours() === hour && now.getMinutes() === minute) {
-            run();
-        }
-    }, 60 * 1000); // Cek setiap menit
-};
-
 // Jalankan pertama kali
 run();
-
-// Jalankan otomatis setiap hari
-scheduleLogin();
