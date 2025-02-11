@@ -1,7 +1,7 @@
-require('dotenv').config();
 const axios = require('axios');
+require('dotenv').config();
 
-const loginUrl = 'https://app.heyelsa.ai/'; // Pastikan ini endpoint yang benar
+const loginUrl = 'https://app.heyelsa.ai/'; // Pastikan ini benar
 const evm_address = process.env.EVM_ADDRESS;
 const privateKey = process.env.PRIVATE_KEY; // Pastikan ini ada di .env
 
@@ -14,16 +14,15 @@ const login = async () => {
     console.log("⏳ Starting login process using Private Key...");
 
     try {
-        const response = await axios.post(
-            loginUrl,
-            { evm_address, privateKey }, // Pastikan format body ini sesuai dengan API
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'Mozilla/5.0',
-                }
+        const response = await axios.get(loginUrl, {
+            params: { evm_address, privateKey }, // Gunakan params untuk GET
+            headers: {
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json',
             }
-        );
+        });
+
+        console.log("🔍 Debug Response:", response.data); // Lihat responsenya
 
         if (response.status === 200 && response.data.token) {
             console.log(`✅ Login successful! Token: ${response.data.token}`);
