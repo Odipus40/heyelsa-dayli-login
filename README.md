@@ -25,7 +25,7 @@ Create folder .env
 nano .env
 ```
 `
-COOKIE=your_cookie
+COOKIE=your_cookie <br>
 `
 `
 EVM_ADDRESS=your_evm_address
