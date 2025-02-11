@@ -49,58 +49,70 @@ const login = async () => {
     }
 };
 
-async function checkPoints(cookie) {
-  console.log(`📊 [${getFormattedTime()}] Mengecek jumlah poin...\n`.blue);
+const getTotalPoints = async () => {
+    console.log(`\n💰 [${getFormattedTime()}] Points your address: ${evm_address}...`);
 
-  try {
-    if (!cookie) {
-      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek poin.'.red);
-      return;
+    try {
+        const response = await axios.post(pointsUrl, 
+            { evm_address }, // Payload dengan evm_address
+            {
+                headers: {
+                    'Cookie': cookie,
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        console.log("🔍 Debug Response:", response.data); // Debug untuk melihat isi response API
+
+        if (response.status === 200) {
+            const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
+            console.log(`🎯 Current Points Total: ${totalPoints}`);
+        } else {
+            console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
     }
+};
 
-    const response = await axios.post(API_POINTS, {
-      headers: {
-        'Cookie': cookie,
-      },
-    });
+// Fungsi untuk mengambil history poin
+const getPointHistory = async () => {
+    console.log(`\n📌 [${getFormattedTime()}] History your address: ${evm_address}...`);
 
-    if (response.data?.points) {
-      console.log(`✅ [${getFormattedTime()}] Jumlah Poin: ${response.data.points}`.green.bold);
-    } else {
-      console.log('❌ Gagal mendapatkan jumlah poin.'.red);
+    try {
+        const response = await axios.post(historyUrl, 
+            { params: { evm_address } }, // Menggunakan payload dengan params
+            {
+                headers: {
+                    'Cookie': cookie,
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        if (response.status === 200) {
+            const data = response.data;
+
+            if (data.points_details && Array.isArray(data.points_details)) {
+                console.log("🔹 Riwayat Poin:");
+                data.points_details.forEach((entry, index) => {
+                    console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
+                });
+            } else {
+                console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
+            }
+        } else {
+            console.error(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.response?.data || error.message);
     }
-  } catch (error) {
-    console.error(`⚠️ [${getFormattedTime()}] Error saat mengecek poin:`, error.response?.data || error.message);
-  }
-}
-
-async function checkHistory(cookie) {
-  console.log(`📜 [${getFormattedTime()}] Mengecek riwayat poin...\n`.blue);
-
-  try {
-    if (!cookie) {
-      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek riwayat poin.'.red);
-      return;
-    }
-
-    const response = await axios.post(API_HISTORY, {
-      headers: {
-        'Cookie': cookie,
-      },
-    });
-
-    if (response.data?.history) {
-      console.log(`✅ [${getFormattedTime()}] Riwayat Poin:`.green.bold);
-      response.data.history.forEach((entry, index) => {
-        console.log(`${index + 1}. ${entry.description} - ${entry.points} poin`);
-      });
-    } else {
-      console.log('❌ Gagal mendapatkan riwayat poin.'.red);
-    }
-  } catch (error) {
-    console.error(`⚠️ [${getFormattedTime()}] Error saat mengecek riwayat poin:`, error.response?.data || error.message);
-  }
-}
+};
 
 async function startRoutine() {
   const cookie = await login();
