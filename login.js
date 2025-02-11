@@ -20,12 +20,8 @@ async function login(walletAddress) {
       walletAddress: walletAddress,
     };
 
-    const response = await axios.post(API_LOGIN, payload, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
+    const response = await axios.get(API_LOGIN, { params: { walletAddress } });
+ 
     if (response.data.success) {
       console.log('✅ Login berhasil!'.green.bold);
       console.log(`🎟️ Token: ${response.data.token.substring(0, 50)}...`);
