@@ -12,15 +12,27 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-async function login(walletAddress) {
-  console.log('\n🔑 Melakukan login ke HeyElsa...'.blue);
+const login = async () => {
+    console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
 
-  try {
-    const payload = { walletAddress };
-    const response = await axios.post(API_LOGIN, payload, {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    try {
+        const response = await axios.get(loginUrl, {
+            headers: {
+                'Cookie': cookie,
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json, text/html',
+            }
+        });
 
+        if (response.status === 200) {
+            console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
+        } else {
+            console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
+        }
+    } catch (error) {
+        console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
+    }
+};
     console.log('📢 Response Headers:', response.headers); // Debugging
     console.log('📢 Response Data:', response.data); // Debugging
 
