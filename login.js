@@ -23,16 +23,11 @@ const login = async () => {
         console.log("✅ Signature Created:", signature);
         
         // Kirim signature ke API login
-        const response = await axios.post('https://app.heyelsa.ai/', {
-            evm_address,
-            signature
-        }, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await axios.post('https://app.heyelsa.ai/api/login', {
+    evm_address,
+    signature,
+    _rsc: "1dz8a"
+}, { headers });
 
         console.log("🔍 Debug Response:", response.data);
 
