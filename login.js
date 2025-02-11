@@ -129,9 +129,6 @@ async function startRoutine() {
     console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
 };
 
-// Jalankan pertama kali
-run();
-
 // Jalankan setiap 24 jam sekali
 const intervalTime = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
 setInterval(run, intervalTime);
