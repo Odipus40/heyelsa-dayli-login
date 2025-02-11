@@ -23,16 +23,13 @@ const login = async () => {
     console.log(`\n⏳ [${getFormattedTime()}] Starting login process using _rsc method...`);
 
     try {
-        const response = await axios.post(loginUrl, {
-            evm_address,
-            _rsc: rsc_value
-        }, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
-        });
+        const response = await axios.get(loginUrl, {
+    params: { evm_address, _rsc: rsc_value },
+    headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json',
+    }
+});
 
         if (response.status === 200 && response.data.token) {
             console.log(`✅ [${getFormattedTime()}] Login successful! Token received.`);
