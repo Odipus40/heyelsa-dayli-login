@@ -14,7 +14,10 @@ const rl = readline.createInterface({
 async function loginAndGetCookies(walletAddress) {
   console.log('\n🔑 Membuka browser untuk login ke HeyElsa...\n'.blue);
 
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({
+  headless: false,
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
   const page = await browser.newPage();
   await page.goto('https://app.heyelsa.ai/login', { waitUntil: 'networkidle2' });
 
