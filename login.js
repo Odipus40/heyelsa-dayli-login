@@ -1,8 +1,9 @@
 const { ethers } = require("ethers");
+const axios = require("axios"); // Tambahkan ini!
 require('dotenv').config();
 
 const evm_address = process.env.EVM_ADDRESS;
-const privateKey = process.env.PRIVATE_KEY; // Pastikan ini ada di .env
+const privateKey = process.env.PRIVATE_KEY;
 
 if (!evm_address || !privateKey) {
     console.error("❌ EVM Address atau Private Key tidak ditemukan. Pastikan file .env telah diisi.");
