@@ -125,8 +125,14 @@ async function startRoutine() {
   await getPointHistory();
   if (!cookie) return;
   
-   console.log(`\n⏳ [${getFormattedTime()}] Wait 24 hours before login again...\n`.yellow);
-  await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
-}
+   const nextRun = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
+};
 
+// Jalankan pertama kali
+run();
+
+// Jalankan setiap 24 jam sekali
+const intervalTime = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+setInterval(run, intervalTime);
 startRoutine();
