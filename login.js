@@ -1,130 +1,92 @@
-require('dotenv').config();
+const puppeteer = require('puppeteer');
 const axios = require('axios');
 const readline = require('readline');
 require('colors');
-const { displayHeader } = require('./helpers'); // Import fungsi dari helpers.js
 
-const loginUrl = 'https://app.heyelsa.ai/login';
-const pointsUrl = 'https://app.heyelsa.ai/api/points'; // API total poin
-const historyUrl = 'https://app.heyelsa.ai/api/points_history'; // API history poin
+const API_CHECKIN = 'https://app.heyelsa.ai/'; // Gantilah jika endpoint berbeda
+const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
 
-const cookie = process.env.COOKIE;
-const evm_address = process.env.EVM_ADDRESS; // Pastikan ada di .env
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-if (!cookie || !evm_address) {
-    console.error("❌ Cookie atau EVM Address tidak ditemukan. Pastikan file .env telah diisi.");
-    process.exit(1);
+async function loginAndGetCookies(walletAddress) {
+  console.log('\n🔑 Membuka browser untuk login ke HeyElsa...\n'.blue);
+
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+  await page.goto('https://app.heyelsa.ai/login', { waitUntil: 'networkidle2' });
+
+  console.log('📝 Memasukkan alamat wallet...'.yellow);
+  await page.type('input[name="wallet"]', walletAddress, { delay: 50 });
+
+  console.log('🔘 Mengklik tombol login...'.yellow);
+  await Promise.all([
+    page.click('button[type="submit"]'),
+    page.waitForNavigation({ waitUntil: 'networkidle2' }),
+  ]);
+
+  console.log('✅ Login sukses! Mengambil cookies...'.green.bold);
+  const cookies = await page.cookies();
+
+  await browser.close();
+
+  if (cookies.length > 0) {
+    console.log(`🍪 Cookies berhasil diambil: ${JSON.stringify(cookies).substring(0, 50)}...`);
+    return cookies;
+  } else {
+    console.log('❌ Gagal mendapatkan cookies!'.red);
+    return null;
+  }
 }
 
-// Fungsi untuk mendapatkan waktu sekarang (WIB)
-const getFormattedTime = () => {
-    return new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-};
+async function checkIn(cookies) {
+  console.log('🚀 Memulai proses check-in harian...\n'.blue);
 
-// Fungsi login
-const login = async () => {
-    console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
+  try {
+    // Mengonversi cookies ke format yang bisa digunakan oleh Axios
+    const cookieHeader = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
 
-    try {
-        const response = await axios.get(loginUrl, {
-            headers: {
-                'Cookie': cookie,
-                'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json, text/html',
-            }
-        });
+    const response = await axios.post(API_CHECKIN, {}, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader, // Menggunakan cookies untuk autentikasi
+      },
+    });
 
-        if (response.status === 200) {
-            console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
-        } else {
-            console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
-        }
-    } catch (error) {
-        console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
+    if (response.data.success) {
+      console.log(`✅ Check-in berhasil! 🎉 Poin diperoleh: ${response.data.points}`.green.bold);
+    } else {
+      console.log('❌ Check-in gagal! Coba lagi nanti.'.red);
     }
-};
+  } catch (error) {
+    console.error('⚠️ Error saat check-in:', error.response?.data || error.message);
+  }
+}
 
-// Fungsi untuk mengambil total poin dari API `/points`
-const getTotalPoints = async () => {
-    console.log(`\n💰 [${getFormattedTime()}] Points your address: ${evm_address}...`);
-
-    try {
-        const response = await axios.post(pointsUrl, 
-            { evm_address }, // Payload dengan evm_address
-            {
-                headers: {
-                    'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        console.log("🔍 Debug Response:", response.data); // Debug untuk melihat isi response API
-
-        if (response.status === 200) {
-            const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
-            console.log(`🎯 Current Points Total: ${totalPoints}`);
-        } else {
-            console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
-        }
-    } catch (error) {
-        console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
+async function startDailyCheckIn(walletAddress) {
+  while (true) {
+    const cookies = await loginAndGetCookies(walletAddress);
+    if (!cookies) {
+      console.log('❌ Gagal mendapatkan cookies. Coba lagi nanti.'.red);
+      return;
     }
-};
 
-// Fungsi untuk mengambil history poin
-const getPointHistory = async () => {
-    console.log(`\n📌 [${getFormattedTime()}] History your address: ${evm_address}...`);
+    await checkIn(cookies);
 
-    try {
-        const response = await axios.post(historyUrl, 
-            { params: { evm_address } }, // Menggunakan payload dengan params
-            {
-                headers: {
-                    'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
+    console.log('\n⏳ Menunggu 24 jam sebelum check-in berikutnya...\n'.yellow);
+    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
+  }
+}
 
-        if (response.status === 200) {
-            const data = response.data;
+rl.question('💳 Masukkan alamat wallet HeyElsa: '.cyan, (walletAddress) => {
+  if (!walletAddress) {
+    console.log('⚠️ Alamat wallet tidak boleh kosong!'.red.bold);
+    rl.close();
+    return;
+  }
 
-            if (data.points_details && Array.isArray(data.points_details)) {
-                console.log("🔹 Riwayat Poin:");
-                data.points_details.forEach((entry, index) => {
-                    console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
-                });
-            } else {
-                console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
-            }
-        } else {
-            console.error(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
-        }
-    } catch (error) {
-        console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.response?.data || error.message);
-    }
-};
-
-// Fungsi utama untuk menjalankan semua proses
-const run = async () => {
-    displayHeader(); // Menampilkan header sebelum eksekusi lainnya
-    console.log(`\n🚀 [${getFormattedTime()}] Starting automatic execution...\n`);
-    await login();
-    await getTotalPoints(); // Ambil total poin lebih dulu
-    await getPointHistory(); // Lalu tampilkan history poin
-
-    const nextRun = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
-};
-
-// Jalankan pertama kali
-run();
-
-// Jalankan setiap 24 jam sekali
-const intervalTime = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
-setInterval(run, intervalTime);
+  rl.close();
+  startDailyCheckIn(walletAddress);
+});
