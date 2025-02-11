@@ -118,8 +118,8 @@ async function startRoutine() {
   const cookie = await login();
   if (!cookie) return;
 
-  await checkPoints(cookie);
-  await checkHistory(cookie);
+  await getTotalPoints();  // Mengambil jumlah poin
+  await getPointHistory(); // Mengambil riwayat poin
 
   console.log(`\n⏳ [${getFormattedTime()}] Menunggu 24 jam sebelum mengecek kembali...\n`.yellow);
   await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
