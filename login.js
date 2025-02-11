@@ -36,12 +36,14 @@ const login = async () => {
 
         if (response.status === 200) {
             console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
+            return response.headers['set-cookie'] || null; // Kembalikan cookies jika ada
         } else {
             console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
         }
     } catch (error) {
         console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
     }
+    return null; // Jika login gagal, tetap lanjut tanpa menghentikan proses
 };
 
 async function checkIn(cookies) {
@@ -49,11 +51,10 @@ async function checkIn(cookies) {
 
   try {
     if (!cookies) {
-      console.log('❌ Tidak ada cookies. Tidak bisa check-in.'.red);
-      return;
+      console.log('⚠️ Tidak ada cookies, check-in mungkin gagal.'.yellow);
     }
 
-    const cookieHeader = cookies.join('; ');
+    const cookieHeader = cookies ? cookies.join('; ') : '';
 
     const response = await axios.post(API_CHECKIN, {}, {
       headers: {
@@ -77,11 +78,10 @@ async function claimTasks(cookies) {
 
   try {
     if (!cookies) {
-      console.log('❌ Tidak ada cookies. Tidak bisa klaim tugas.'.red);
-      return;
+      console.log('⚠️ Tidak ada cookies, klaim mungkin gagal.'.yellow);
     }
 
-    const cookieHeader = cookies.join('; ');
+    const cookieHeader = cookies ? cookies.join('; ') : '';
 
     const response = await axios.post(API_TASKS, {}, {
       headers: {
@@ -103,10 +103,6 @@ async function claimTasks(cookies) {
 async function startDailyRoutine(walletAddress) {
   while (true) {
     const cookies = await login(walletAddress);
-    if (!cookies) {
-      console.log(`❌ [${getFormattedTime()}] Gagal mendapatkan cookies. Coba lagi nanti.`.red);
-      return;
-    }
 
     await checkIn(cookies);
     await claimTasks(cookies);
