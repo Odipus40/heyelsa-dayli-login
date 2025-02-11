@@ -33,22 +33,6 @@ const login = async () => {
         console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
     }
 };
-    console.log('📢 Response Headers:', response.headers); // Debugging
-    console.log('📢 Response Data:', response.data); // Debugging
-
-    const cookies = response.headers['set-cookie']; // Ambil cookies dari header
-    if (!cookies || cookies.length === 0) {
-      console.log('❌ Tidak ada cookies yang dikembalikan.'.red);
-      return null;
-    }
-
-    console.log('✅ Login berhasil! Cookies diterima.'.green);
-    return cookies;
-  } catch (error) {
-    console.error('⚠️ Error saat login:', error.response?.data || error.message);
-    return null;
-  }
-}
 
 async function checkIn(cookies) {
   console.log('🚀 Memulai check-in harian...\n'.blue);
