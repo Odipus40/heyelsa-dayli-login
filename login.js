@@ -9,6 +9,7 @@ if (!evm_address || !privateKey) {
     console.error("❌ EVM Address atau Private Key tidak ditemukan. Pastikan file .env telah diisi.");
     process.exit(1);
 }
+const LOGIN_URL = 'https://app.heyelsa.ai/login'
 
 const signMessage = async (privateKey, message) => {
     const wallet = new ethers.Wallet(privateKey);
