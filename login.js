@@ -20,7 +20,13 @@ async function login(walletAddress) {
       walletAddress: walletAddress,
     };
 
-    const response = await axios.get(API_LOGIN, { params: { walletAddress } });
+    const response = await axios.get(API_LOGIN, {
+            headers: {
+                'Cookie': cookie,
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json, text/html',
+            }
+        });
  
     if (response.data.success) {
       console.log('✅ Login berhasil!'.green.bold);
