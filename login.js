@@ -1,18 +1,18 @@
 require('dotenv').config();
 const axios = require('axios');
-const readline = require('readline');
+const { ethers } = require('ethers');
 require('colors');
 const { displayHeader } = require('./helpers'); // Import fungsi dari helpers.js
 
-const loginUrl = 'https://app.heyelsa.ai/login';
-const pointsUrl = 'https://app.heyelsa.ai/api/points'; // API total poin
-const historyUrl = 'https://app.heyelsa.ai/api/points_history'; // API history poin
+const loginUrl = 'https://app.heyelsa.ai/api/login_privatekey';
+const pointsUrl = 'https://app.heyelsa.ai/api/points';
+const historyUrl = 'https://app.heyelsa.ai/api/points_history';
 
-const cookie = process.env.COOKIE;
-const evm_address = process.env.EVM_ADDRESS; // Pastikan ada di .env
+const privateKey = process.env.PRIVATE_KEY;
+const evm_address = process.env.EVM_ADDRESS;
 
-if (!cookie || !evm_address) {
-    console.error("❌ Cookie atau EVM Address tidak ditemukan. Pastikan file .env telah diisi.");
+if (!privateKey || !evm_address) {
+    console.error("❌ Private Key atau EVM Address tidak ditemukan. Pastikan file .env telah diisi.");
     process.exit(1);
 }
 
@@ -21,39 +21,50 @@ const getFormattedTime = () => {
     return new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 };
 
-// Fungsi login
+// Fungsi untuk login menggunakan Private Key
 const login = async () => {
-    console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
+    console.log(`\n⏳ [${getFormattedTime()}] Starting login process using Private Key...`);
 
     try {
-        const response = await axios.get(loginUrl, {
+        const wallet = new ethers.Wallet(privateKey);
+        const message = `Login to HeyElsa at ${new Date().toISOString()}`;
+        const signature = await wallet.signMessage(message);
+
+        const response = await axios.post(loginUrl, {
+            evm_address,
+            signature,
+            message
+        }, {
             headers: {
-                'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json, text/html',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
             }
         });
 
-        if (response.status === 200) {
-            console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
+        if (response.status === 200 && response.data.token) {
+            console.log(`✅ [${getFormattedTime()}] Login successful!`);
+            return response.data.token; // Token ini akan digunakan untuk permintaan berikutnya
         } else {
-            console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
+            console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi tidak mendapatkan token!`);
+            return null;
         }
     } catch (error) {
-        console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
+        console.error(`❌ [${getFormattedTime()}] Login Failed!!!:`, error.response?.data || error.message);
+        return null;
     }
 };
 
 // Fungsi untuk mengambil total poin dari API `/points`
-const getTotalPoints = async () => {
-    console.log(`\n💰 [${getFormattedTime()}] Points your address: ${evm_address}...`);
+const getTotalPoints = async (token) => {
+    console.log(`\n💰 [${getFormattedTime()}] Points for address: ${evm_address}...`);
 
     try {
         const response = await axios.post(pointsUrl, 
-            { evm_address }, // Payload dengan evm_address
+            { evm_address }, 
             {
                 headers: {
-                    'Cookie': cookie,
+                    'Authorization': `Bearer ${token}`,
                     'User-Agent': 'Mozilla/5.0',
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
@@ -61,29 +72,29 @@ const getTotalPoints = async () => {
             }
         );
 
-        console.log("🔍 Debug Response:", response.data); // Debug untuk melihat isi response API
+        console.log("🔍 Debug Response:", response.data);
 
         if (response.status === 200) {
-            const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
+            const totalPoints = response.data.points;
             console.log(`🎯 Current Points Total: ${totalPoints}`);
         } else {
-            console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
+            console.error(`⚠️ Failed to retrieve points, status: ${response.status}`);
         }
     } catch (error) {
-        console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
+        console.error(`❌ Error fetching points:`, error.response?.data || error.message);
     }
 };
 
 // Fungsi untuk mengambil history poin
-const getPointHistory = async () => {
-    console.log(`\n📌 [${getFormattedTime()}] History your address: ${evm_address}...`);
+const getPointHistory = async (token) => {
+    console.log(`\n📌 [${getFormattedTime()}] History for address: ${evm_address}...`);
 
     try {
         const response = await axios.post(historyUrl, 
-            { params: { evm_address } }, // Menggunakan payload dengan params
+            { evm_address }, 
             {
                 headers: {
-                    'Cookie': cookie,
+                    'Authorization': `Bearer ${token}`,
                     'User-Agent': 'Mozilla/5.0',
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
@@ -93,30 +104,35 @@ const getPointHistory = async () => {
 
         if (response.status === 200) {
             const data = response.data;
-
             if (data.points_details && Array.isArray(data.points_details)) {
-                console.log("🔹 Riwayat Poin:");
+                console.log("🔹 Points History:");
                 data.points_details.forEach((entry, index) => {
-                    console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
+                    console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} points on ${entry.created_at_utc}`);
                 });
             } else {
-                console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
+                console.error(`⚠️ No history found or incorrect format.`);
             }
         } else {
-            console.error(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
+            console.error(`⚠️ Failed to retrieve history, status: ${response.status}`);
         }
     } catch (error) {
-        console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.response?.data || error.message);
+        console.error(`❌ Error fetching point history:`, error.response?.data || error.message);
     }
 };
 
 // Fungsi utama untuk menjalankan semua proses
 const run = async () => {
-    displayHeader(); // Menampilkan header sebelum eksekusi lainnya
+    displayHeader();
     console.log(`\n🚀 [${getFormattedTime()}] Starting automatic execution...\n`);
-    await login();
-    await getTotalPoints(); // Ambil total poin lebih dulu
-    await getPointHistory(); // Lalu tampilkan history poin
+    
+    const token = await login();
+    if (!token) {
+        console.error("❌ Failed to retrieve authentication token. Exiting...");
+        return;
+    }
+
+    await getTotalPoints(token);
+    await getPointHistory(token);
 
     const nextRun = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
     console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
@@ -126,5 +142,5 @@ const run = async () => {
 run();
 
 // Jalankan setiap 24 jam sekali
-const intervalTime = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+const intervalTime = 24 * 60 * 60 * 1000; 
 setInterval(run, intervalTime);
