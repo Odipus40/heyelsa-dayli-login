@@ -7,6 +7,12 @@ const API_CHECKIN = 'https://app.heyelsa.ai/api/points'; // Endpoint check-in
 const API_TASKS = 'https://app.heyelsa.ai/api/points_history'; // Endpoint klaim poin
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
 
+// Fungsi untuk mendapatkan waktu dalam format yang lebih rapi
+function getFormattedTime() {
+  const now = new Date();
+  return now.toLocaleString('id-ID', { hour12: false });
+}
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -14,6 +20,10 @@ const rl = readline.createInterface({
 
 const login = async () => {
     console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
+
+    // Pastikan loginUrl dan cookie terdefinisi sebelum digunakan
+    const loginUrl = API_LOGIN;
+    const cookie = ''; // Pastikan mendapatkan cookie yang valid sebelum dipakai
 
     try {
         const response = await axios.get(loginUrl, {
@@ -35,7 +45,7 @@ const login = async () => {
 };
 
 async function checkIn(cookies) {
-  console.log('🚀 Memulai check-in harian...\n'.blue);
+  console.log(`🚀 [${getFormattedTime()}] Memulai check-in harian...\n`.blue);
 
   try {
     if (!cookies) {
@@ -53,17 +63,17 @@ async function checkIn(cookies) {
     });
 
     if (response.data?.success) {
-      console.log(`✅ Check-in berhasil! 🎉 Poin diperoleh: ${response.data.points}`.green.bold);
+      console.log(`✅ [${getFormattedTime()}] Check-in berhasil! 🎉 Poin diperoleh: ${response.data.points}`.green.bold);
     } else {
       console.log('❌ Check-in gagal! Coba lagi nanti.'.red);
     }
   } catch (error) {
-    console.error('⚠️ Error saat check-in:', error.response?.data || error.message);
+    console.error(`⚠️ [${getFormattedTime()}] Error saat check-in:`, error.response?.data || error.message);
   }
 }
 
 async function claimTasks(cookies) {
-  console.log('🎯 Mengklaim poin dari tugas...\n'.blue);
+  console.log(`🎯 [${getFormattedTime()}] Mengklaim poin dari tugas...\n`.blue);
 
   try {
     if (!cookies) {
@@ -81,12 +91,12 @@ async function claimTasks(cookies) {
     });
 
     if (response.data?.success) {
-      console.log(`🏆 Poin tambahan berhasil diklaim! 🎉 Total: ${response.data.points}`.green.bold);
+      console.log(`🏆 [${getFormattedTime()}] Poin tambahan berhasil diklaim! 🎉 Total: ${response.data.points}`.green.bold);
     } else {
       console.log('❌ Gagal mengklaim poin dari tugas.'.red);
     }
   } catch (error) {
-    console.error('⚠️ Error saat klaim poin:', error.response?.data || error.message);
+    console.error(`⚠️ [${getFormattedTime()}] Error saat klaim poin:`, error.response?.data || error.message);
   }
 }
 
@@ -94,14 +104,14 @@ async function startDailyRoutine(walletAddress) {
   while (true) {
     const cookies = await login(walletAddress);
     if (!cookies) {
-      console.log('❌ Gagal mendapatkan cookies. Coba lagi nanti.'.red);
+      console.log(`❌ [${getFormattedTime()}] Gagal mendapatkan cookies. Coba lagi nanti.`.red);
       return;
     }
 
     await checkIn(cookies);
     await claimTasks(cookies);
 
-    console.log('\n⏳ Menunggu 24 jam sebelum check-in dan klaim poin berikutnya...\n'.yellow);
+    console.log(`\n⏳ [${getFormattedTime()}] Menunggu 24 jam sebelum check-in dan klaim poin berikutnya...\n`.yellow);
     await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
   }
 }
