@@ -2,7 +2,7 @@ const axios = require('axios');
 const readline = require('readline');
 require('colors');
 
-const API_LOGIN = 'https://app.heyelsa.ai/api/auth/login'; // Pastikan endpoint benar
+const API_LOGIN = 'https://app.heyelsa.ai/login'; // Pastikan endpoint benar
 const API_CHECKIN = 'https://app.heyelsa.ai/api/points'; // Endpoint check-in
 const API_TASKS = 'https://app.heyelsa.ai/api/points_history'; // Endpoint klaim poin
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
