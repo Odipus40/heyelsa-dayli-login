@@ -23,7 +23,7 @@ const login = async () => {
     console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
 
     if (!cookie) {
-        console.error(`⚠️ [${getFormattedTime()}] Not cookies received.`);
+        console.error(`⚠️ [${getFormattedTime()}] No cookies received.`);
         return null;
     }
 
@@ -40,7 +40,7 @@ const login = async () => {
             console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
             return cookie;
         } else {
-            console.error(`⚠️ [${getFormattedTime()}] Login success but noy stats 200: ${response.status}`);
+            console.error(`⚠️ [${getFormattedTime()}] Login success but not status 200: ${response.status}`);
             return null;
         }
     } catch (error) {
@@ -50,13 +50,13 @@ const login = async () => {
 };
 
 // Fungsi untuk mengambil total poin
-const getTotalPoints = async () => {
+const getTotalPoints = async (cookie) => {
     if (!evm_address) {
-        console.error("⚠️ evm_address Failed diset on .env");
+        console.error("⚠️ evm_address not set in .env");
         return;
     }
 
-    console.log(`\n💰 [${getFormattedTime()}] Check points your address: ${evm_address}...`);
+    console.log(`\n💰 [${getFormattedTime()}] Checking points for address: ${evm_address}...`);
 
     try {
         const response = await axios.post(API_POINTS, 
@@ -74,21 +74,21 @@ const getTotalPoints = async () => {
         if (response.status === 200 && response.data.points !== undefined) {
             console.log(`🎯 Current Points Total: ${response.data.points}`);
         } else {
-            console.error(`⚠️ Failed to collect total points, status: ${response.status}`);
+            console.error(`⚠️ Failed to retrieve total points, status: ${response.status}`);
         }
     } catch (error) {
-        console.error(`❌ An error occurred while retrieving total points:`, error.response?.data || error.message);
+        console.error(`❌ Error retrieving total points:`, error.response?.data || error.message);
     }
 };
 
 // Fungsi untuk mengambil history poin
-const getPointHistory = async () => {
+const getPointHistory = async (cookie) => {
     if (!evm_address) {
-        console.error("⚠️ evm_address not diset on .env");
+        console.error("⚠️ evm_address not set in .env");
         return;
     }
 
-    console.log(`\n📜 [${getFormattedTime()}] Check history your address: ${evm_address}...`);
+    console.log(`\n📜 [${getFormattedTime()}] Checking history for address: ${evm_address}...`);
 
     try {
         const response = await axios.post(API_HISTORY, 
@@ -104,32 +104,41 @@ const getPointHistory = async () => {
         );
 
         if (response.status === 200 && response.data.points_details) {
-            console.log("🔹 Riwayat Poin:");
+            console.log("🔹 Points History:");
             response.data.points_details.forEach((entry, index) => {
-                console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
+                console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} points on ${entry.created_at_utc}`);
             });
         } else {
-            console.error(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
+            console.error(`⚠️ Points history not found or not in the expected format.`);
         }
     } catch (error) {
-        console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.response?.data || error.message);
+        console.error(`❌ Error retrieving points history:`, error.response?.data || error.message);
     }
 };
 
 // Fungsi utama
 async function startRoutine() {
-  const cookie = 
-  await displayHeader();
-  await login();
-  await getTotalPoints();
-  await getPointHistory();
-  if (!cookie) return;
-  
-   const nextRun = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
-};
+    console.log("\n🚀 Running script...");
+    await displayHeader(); // Menampilkan header jika diperlukan
 
-// Jalankan setiap 24 jam sekali
-const intervalTime = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
-setInterval(run, intervalTime);
+    const cookie = await login();
+    if (!cookie) {
+        console.error("❌ Login failed, stopping execution.");
+        return;
+    }
+
+    await getTotalPoints(cookie);
+    await getPointHistory(cookie);
+
+    const nextRun = new Date(Date.now() + WAIT_TIME).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
+
+    // Tunggu 24 jam sebelum menjalankan ulang
+    await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
+
+    // Jalankan ulang
+    await startRoutine();
+}
+
+// Jalankan pertama kali
 startRoutine();
