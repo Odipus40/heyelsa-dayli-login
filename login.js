@@ -1,15 +1,16 @@
 const axios = require('axios');
 const readline = require('readline');
 require('colors');
+require('dotenv').config(); // Load variabel dari .env
 
-const API_LOGIN = 'https://app.heyelsa.ai/login'; // Endpoint login
-const API_POINTS = 'https://app.heyelsa.ai/api/points'; // Endpoint cek jumlah poin
-const API_POINTS_HISTORY = 'https://app.heyelsa.ai/api/points_history'; // Endpoint cek riwayat poin
+const API_LOGIN = 'https://app.heyelsa.ai/login';
+const API_POINTS = 'https://app.heyelsa.ai/api/points';
+const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
+const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
 
 // Fungsi untuk mendapatkan waktu dalam format yang lebih rapi
 function getFormattedTime() {
-  const now = new Date();
-  return now.toLocaleString('id-ID', { hour12: false });
+  return new Date().toLocaleString('id-ID', { hour12: false });
 }
 
 const rl = readline.createInterface({
@@ -20,9 +21,16 @@ const rl = readline.createInterface({
 const login = async () => {
     console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
 
+    const cookie = process.env.COOKIE; // Mengambil cookies dari .env
+    if (!cookie) {
+        console.error(`⚠️ [${getFormattedTime()}] Tidak ada cookies yang diterima.`);
+        return null;
+    }
+
     try {
         const response = await axios.get(API_LOGIN, {
             headers: {
+                'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
                 'Accept': 'application/json, text/html',
             }
@@ -30,45 +38,34 @@ const login = async () => {
 
         if (response.status === 200) {
             console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
-            
-            // Ambil cookies dari response header
-            const cookies = response.headers['set-cookie'];
-            if (cookies) {
-                console.log(`🍪 [${getFormattedTime()}] Cookies diterima!`);
-                return cookies; // Kembalikan cookies ke fungsi pemanggil
-            } else {
-                console.log(`⚠️ [${getFormattedTime()}] Tidak ada cookies yang diterima.`);
-            }
+            return cookie; // Mengembalikan cookies untuk digunakan
         } else {
             console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
+            return null;
         }
     } catch (error) {
         console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
+        return null;
     }
-    return null; // Jika gagal, tetap lanjut tanpa menghentikan proses
 };
 
-// Fungsi untuk mengecek jumlah poin
-async function checkPoints(cookies) {
+async function checkPoints(cookie) {
   console.log(`📊 [${getFormattedTime()}] Mengecek jumlah poin...\n`.blue);
 
   try {
-    if (!cookies) {
-      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek poin.'.yellow);
+    if (!cookie) {
+      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek poin.'.red);
       return;
     }
 
-    const cookieHeader = cookies.join('; ');
-
     const response = await axios.get(API_POINTS, {
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
+        'Cookie': cookie,
       },
     });
 
-    if (response.data?.points !== undefined) {
-      console.log(`🎯 [${getFormattedTime()}] Total Poin: ${response.data.points}`.green.bold);
+    if (response.data?.points) {
+      console.log(`✅ [${getFormattedTime()}] Jumlah Poin: ${response.data.points}`.green.bold);
     } else {
       console.log('❌ Gagal mendapatkan jumlah poin.'.red);
     }
@@ -77,29 +74,25 @@ async function checkPoints(cookies) {
   }
 }
 
-// Fungsi untuk mengecek riwayat poin
-async function checkPointsHistory(cookies) {
+async function checkHistory(cookie) {
   console.log(`📜 [${getFormattedTime()}] Mengecek riwayat poin...\n`.blue);
 
   try {
-    if (!cookies) {
-      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek riwayat poin.'.yellow);
+    if (!cookie) {
+      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek riwayat poin.'.red);
       return;
     }
 
-    const cookieHeader = cookies.join('; ');
-
-    const response = await axios.get(API_POINTS_HISTORY, {
+    const response = await axios.get(API_HISTORY, {
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
+        'Cookie': cookie,
       },
     });
 
     if (response.data?.history) {
-      console.log(`📌 [${getFormattedTime()}] Riwayat Poin:`);
+      console.log(`✅ [${getFormattedTime()}] Riwayat Poin:`.green.bold);
       response.data.history.forEach((entry, index) => {
-        console.log(`${index + 1}. ${entry.description}: ${entry.points} poin`);
+        console.log(`${index + 1}. ${entry.description} - ${entry.points} poin`);
       });
     } else {
       console.log('❌ Gagal mendapatkan riwayat poin.'.red);
@@ -109,21 +102,15 @@ async function checkPointsHistory(cookies) {
   }
 }
 
-// Fungsi utama untuk menjalankan proses
-async function startProcess(walletAddress) {
-  const cookies = await login(walletAddress);
+async function startRoutine() {
+  const cookie = await login();
+  if (!cookie) return;
 
-  await checkPoints(cookies);
-  await checkPointsHistory(cookies);
+  await checkPoints(cookie);
+  await checkHistory(cookie);
+
+  console.log(`\n⏳ [${getFormattedTime()}] Menunggu 24 jam sebelum mengecek kembali...\n`.yellow);
+  await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
 }
 
-rl.question('💳 Masukkan alamat wallet HeyElsa: '.cyan, (walletAddress) => {
-  if (!walletAddress) {
-    console.log('⚠️ Alamat wallet tidak boleh kosong!'.red.bold);
-    rl.close();
-    return;
-  }
-
-  rl.close();
-  startProcess(walletAddress);
-});
+startRoutine();
