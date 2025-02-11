@@ -22,12 +22,18 @@ const login = async () => {
         const signature = await signMessage(privateKey, "Login to HeyElsa"); // Panggil setelah deklarasi
         console.log("✅ Signature Created:", signature);
         
-        // Kirim signature ke API login
-        const response = await axios.post('https://app.heyelsa.ai/', {
-    evm_address,
-    signature,
-    _rsc: "1dz8a"
-}, { headers });
+        const headers = {
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Referer': 'https://app.heyelsa.ai'
+        };
+
+        const response = await axios.post(LOGIN_URL, {
+            evm_address,
+            signature,
+            _rsc: "1dz8a"
+        }, { headers });
 
         console.log("🔍 Debug Response:", response.data);
 
