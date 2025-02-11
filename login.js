@@ -3,9 +3,8 @@ const readline = require('readline');
 require('colors');
 
 const API_LOGIN = 'https://app.heyelsa.ai/login'; // Endpoint login
-const API_CHECKIN = 'https://app.heyelsa.ai/api/points'; // Endpoint check-in
-const API_TASKS = 'https://app.heyelsa.ai/api/points_history'; // Endpoint klaim poin
-const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+const API_POINTS = 'https://app.heyelsa.ai/api/points'; // Endpoint cek jumlah poin
+const API_POINTS_HISTORY = 'https://app.heyelsa.ai/api/points_history'; // Endpoint cek riwayat poin
 
 // Fungsi untuk mendapatkan waktu dalam format yang lebih rapi
 function getFormattedTime() {
@@ -49,70 +48,73 @@ const login = async () => {
     return null; // Jika gagal, tetap lanjut tanpa menghentikan proses
 };
 
-async function checkIn(cookies) {
-  console.log(`🚀 [${getFormattedTime()}] Memulai check-in harian...\n`.blue);
+// Fungsi untuk mengecek jumlah poin
+async function checkPoints(cookies) {
+  console.log(`📊 [${getFormattedTime()}] Mengecek jumlah poin...\n`.blue);
 
   try {
     if (!cookies) {
-      console.log('⚠️ Tidak ada cookies, check-in mungkin gagal.'.yellow);
+      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek poin.'.yellow);
+      return;
     }
 
-    const cookieHeader = cookies ? cookies.join('; ') : '';
+    const cookieHeader = cookies.join('; ');
 
-    const response = await axios.post(API_CHECKIN, {}, {
+    const response = await axios.get(API_POINTS, {
       headers: {
         'Content-Type': 'application/json',
         'Cookie': cookieHeader,
       },
     });
 
-    if (response.data?.success) {
-      console.log(`✅ [${getFormattedTime()}] Check-in berhasil! 🎉 Poin diperoleh: ${response.data.points}`.green.bold);
+    if (response.data?.points !== undefined) {
+      console.log(`🎯 [${getFormattedTime()}] Total Poin: ${response.data.points}`.green.bold);
     } else {
-      console.log('❌ Check-in gagal! Coba lagi nanti.'.red);
+      console.log('❌ Gagal mendapatkan jumlah poin.'.red);
     }
   } catch (error) {
-    console.error(`⚠️ [${getFormattedTime()}] Error saat check-in:`, error.response?.data || error.message);
+    console.error(`⚠️ [${getFormattedTime()}] Error saat mengecek poin:`, error.response?.data || error.message);
   }
 }
 
-async function claimTasks(cookies) {
-  console.log(`🎯 [${getFormattedTime()}] Mengklaim poin dari tugas...\n`.blue);
+// Fungsi untuk mengecek riwayat poin
+async function checkPointsHistory(cookies) {
+  console.log(`📜 [${getFormattedTime()}] Mengecek riwayat poin...\n`.blue);
 
   try {
     if (!cookies) {
-      console.log('⚠️ Tidak ada cookies, klaim mungkin gagal.'.yellow);
+      console.log('⚠️ Tidak ada cookies, tidak bisa mengecek riwayat poin.'.yellow);
+      return;
     }
 
-    const cookieHeader = cookies ? cookies.join('; ') : '';
+    const cookieHeader = cookies.join('; ');
 
-    const response = await axios.post(API_TASKS, {}, {
+    const response = await axios.get(API_POINTS_HISTORY, {
       headers: {
         'Content-Type': 'application/json',
         'Cookie': cookieHeader,
       },
     });
 
-    if (response.data?.success) {
-      console.log(`🏆 [${getFormattedTime()}] Poin tambahan berhasil diklaim! 🎉 Total: ${response.data.points}`.green.bold);
+    if (response.data?.history) {
+      console.log(`📌 [${getFormattedTime()}] Riwayat Poin:`);
+      response.data.history.forEach((entry, index) => {
+        console.log(`${index + 1}. ${entry.description}: ${entry.points} poin`);
+      });
     } else {
-      console.log('❌ Gagal mengklaim poin dari tugas.'.red);
+      console.log('❌ Gagal mendapatkan riwayat poin.'.red);
     }
   } catch (error) {
-    console.error(`⚠️ [${getFormattedTime()}] Error saat klaim poin:`, error.response?.data || error.message);
+    console.error(`⚠️ [${getFormattedTime()}] Error saat mengecek riwayat poin:`, error.response?.data || error.message);
   }
 }
 
-async function startDailyRoutine(walletAddress) {
-  while (true) {
-    const cookies = await login(walletAddress);
+// Fungsi utama untuk menjalankan proses
+async function startProcess(walletAddress) {
+  const cookies = await login(walletAddress);
 
-    await checkIn(cookies);
-    await claimTasks(cookies);
-
-    console.log(`\n⏳ [${getFormattedTime()}] Menunggu 24 jam sebelum check-in dan klaim poin berikutnya...\n`.yellow);
-    await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
-  }
+  await checkPoints(cookies);
+  await checkPointsHistory(cookies);
 }
 
 rl.question('💳 Masukkan alamat wallet HeyElsa: '.cyan, (walletAddress) => {
@@ -123,5 +125,5 @@ rl.question('💳 Masukkan alamat wallet HeyElsa: '.cyan, (walletAddress) => {
   }
 
   rl.close();
-  startDailyRoutine(walletAddress);
+  startProcess(walletAddress);
 });
