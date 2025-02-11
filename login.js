@@ -119,7 +119,7 @@ const getPointHistory = async () => {
 // Fungsi utama
 async function startRoutine() {
   const cookie = 
-    awit displayHeader();
+    await displayHeader();
     await login();
   if (!cookie) return;
   
