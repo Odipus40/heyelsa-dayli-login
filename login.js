@@ -119,14 +119,13 @@ const getPointHistory = async () => {
 // Fungsi utama
 async function startRoutine() {
   const cookie = 
-    await displayHeader();
-    await login();
-  if (!cookie) return;
-  
+  await displayHeader();
+  await login();
   await getTotalPoints();
   await getPointHistory();
-
-  console.log(`\n⏳ [${getFormattedTime()}] Wait 24 hours before login again...\n`.yellow);
+  if (!cookie) return;
+  
+   console.log(`\n⏳ [${getFormattedTime()}] Wait 24 hours before login again...\n`.yellow);
   await new Promise((resolve) => setTimeout(resolve, WAIT_TIME));
 }
 
