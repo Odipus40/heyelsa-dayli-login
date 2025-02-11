@@ -15,9 +15,10 @@ async function loginAndGetCookies(walletAddress) {
   console.log('\n🔑 Membuka browser untuk login ke HeyElsa...\n'.blue);
 
   const browser = await puppeteer.launch({
-  headless: false,
+  headless: 'new',  // Versi terbaru Puppeteer menggunakan 'new' untuk mode headless
   args: ['--no-sandbox', '--disable-setuid-sandbox']
 });
+  
   const page = await browser.newPage();
   await page.goto('https://app.heyelsa.ai/login', { waitUntil: 'networkidle2' });
 
