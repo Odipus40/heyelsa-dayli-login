@@ -1,6 +1,8 @@
 const axios = require('axios');
 const readline = require('readline');
 require('colors');
+const { displayHeader } = require('./helpers');
+
 require('dotenv').config(); // Load variabel dari .env
 
 const API_LOGIN = 'https://app.heyelsa.ai/login?_src=';
@@ -118,7 +120,8 @@ const getPointHistory = async () => {
 async function startRoutine() {
   const cookie = await login();
   if (!cookie) return;
-
+  
+  displayHeader();
   await getTotalPoints();
   await getPointHistory();
 
