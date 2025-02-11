@@ -58,7 +58,7 @@ async function checkPoints(cookie) {
       return;
     }
 
-    const response = await axios.get(API_POINTS, {
+    const response = await axios.post(API_POINTS, {
       headers: {
         'Cookie': cookie,
       },
@@ -83,7 +83,7 @@ async function checkHistory(cookie) {
       return;
     }
 
-    const response = await axios.get(API_HISTORY, {
+    const response = await axios.post(API_HISTORY, {
       headers: {
         'Cookie': cookie,
       },
