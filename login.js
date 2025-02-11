@@ -3,7 +3,7 @@ const readline = require('readline');
 require('colors');
 require('dotenv').config(); // Load variabel dari .env
 
-const API_LOGIN = 'https://app.heyelsa.ai/login?_rsc=';
+const API_LOGIN = 'https://app.heyelsa.ai/api/login';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
@@ -21,7 +21,7 @@ const login = async () => {
     console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
 
     if (!cookie) {
-        console.error(`⚠️ [${getFormattedTime()}] Tidak ada cookies yang diterima.`);
+        console.error(`⚠️ [${getFormattedTime()}] Not cookies received.`);
         return null;
     }
 
@@ -38,7 +38,7 @@ const login = async () => {
             console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
             return cookie;
         } else {
-            console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
+            console.error(`⚠️ [${getFormattedTime()}] Login success but noy stats 200: ${response.status}`);
             return null;
         }
     } catch (error) {
@@ -50,11 +50,11 @@ const login = async () => {
 // Fungsi untuk mengambil total poin
 const getTotalPoints = async () => {
     if (!evm_address) {
-        console.error("⚠️ evm_address belum diset dalam .env");
+        console.error("⚠️ evm_address Failed diset on .env");
         return;
     }
 
-    console.log(`\n💰 [${getFormattedTime()}] Mengecek jumlah poin untuk: ${evm_address}...`);
+    console.log(`\n💰 [${getFormattedTime()}] Check points your address: ${evm_address}...`);
 
     try {
         const response = await axios.post(API_POINTS, 
@@ -72,21 +72,21 @@ const getTotalPoints = async () => {
         if (response.status === 200 && response.data.points !== undefined) {
             console.log(`🎯 Current Points Total: ${response.data.points}`);
         } else {
-            console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
+            console.error(`⚠️ Failed to collect total points, status: ${response.status}`);
         }
     } catch (error) {
-        console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
+        console.error(`❌ An error occurred while retrieving total points:`, error.response?.data || error.message);
     }
 };
 
 // Fungsi untuk mengambil history poin
 const getPointHistory = async () => {
     if (!evm_address) {
-        console.error("⚠️ evm_address belum diset dalam .env");
+        console.error("⚠️ evm_address not diset on .env");
         return;
     }
 
-    console.log(`\n📜 [${getFormattedTime()}] Mengecek riwayat poin untuk: ${evm_address}...`);
+    console.log(`\n📜 [${getFormattedTime()}] Check history your address: ${evm_address}...`);
 
     try {
         const response = await axios.post(API_HISTORY, 
