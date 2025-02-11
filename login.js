@@ -32,7 +32,9 @@ async function login(walletAddress) {
 
     console.log('✅ Login berhasil! Cookies diterima.'.green);
     return cookies;
-  } catch (error) {
+  } 
+    
+    catch (error) {
     console.error('⚠️ Error saat login:', error.response?.data || error.message);
     return null;
   }
