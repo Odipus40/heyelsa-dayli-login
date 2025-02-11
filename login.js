@@ -1,5 +1,16 @@
 const axios = require('axios');
 require('dotenv').config();
+const { ethers } = require("ethers");
+
+const signMessage = async (privateKey, message) => {
+    const wallet = new ethers.Wallet(privateKey);
+    return await wallet.signMessage(message);
+};
+
+// Contoh pemakaian
+signMessage(privateKey, "Login to HeyElsa").then(signature => {
+    console.log("Signature:", signature);
+});
 
 const loginUrl = 'https://app.heyelsa.ai/'; // Pastikan ini benar
 const evm_address = process.env.EVM_ADDRESS;
