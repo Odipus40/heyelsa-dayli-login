@@ -21,14 +21,9 @@ const rl = readline.createInterface({
 const login = async () => {
     console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
 
-    // Pastikan loginUrl dan cookie terdefinisi sebelum digunakan
-    const loginUrl = API_LOGIN;
-    const cookie = ''; // Pastikan mendapatkan cookie yang valid sebelum dipakai
-
     try {
-        const response = await axios.get(loginUrl, {
+        const response = await axios.get(API_LOGIN, {
             headers: {
-                'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
                 'Accept': 'application/json, text/html',
             }
@@ -36,14 +31,22 @@ const login = async () => {
 
         if (response.status === 200) {
             console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
-            return response.headers['set-cookie'] || null; // Kembalikan cookies jika ada
+            
+            // Ambil cookies dari response header
+            const cookies = response.headers['set-cookie'];
+            if (cookies) {
+                console.log(`🍪 [${getFormattedTime()}] Cookies diterima!`);
+                return cookies; // Kembalikan cookies ke fungsi pemanggil
+            } else {
+                console.log(`⚠️ [${getFormattedTime()}] Tidak ada cookies yang diterima.`);
+            }
         } else {
             console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
         }
     } catch (error) {
         console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
     }
-    return null; // Jika login gagal, tetap lanjut tanpa menghentikan proses
+    return null; // Jika gagal, tetap lanjut tanpa menghentikan proses
 };
 
 async function checkIn(cookies) {
