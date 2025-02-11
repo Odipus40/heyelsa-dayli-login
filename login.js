@@ -16,17 +16,27 @@ async function login(walletAddress) {
   console.log('\n🔑 Melakukan login ke HeyElsa...'.blue);
 
   try {
-    const payload = {
-      walletAddress: walletAddress,
-    };
+    const payload = { walletAddress };
+    const response = await axios.post(API_LOGIN, payload, {
+      headers: { 'Content-Type': 'application/json' },
+    });
 
-    const response = await axios.get(API_LOGIN, {
-            headers: {
-                'Cookie': cookie,
-                'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json, text/html',
-            }
-        });
+    console.log('📢 Response Headers:', response.headers); // Debugging
+    console.log('📢 Response Data:', response.data); // Debugging
+
+    const cookies = response.headers['set-cookie']; // Ambil cookies dari header
+    if (!cookies) {
+      console.log('❌ Tidak ada cookies yang dikembalikan.'.red);
+      return null;
+    }
+
+    console.log('✅ Login berhasil! Cookies diterima.'.green);
+    return cookies;
+  } catch (error) {
+    console.error('⚠️ Error saat login:', error.response?.data || error.message);
+    return null;
+  }
+}
  
     if (response.data.success) {
       console.log('✅ Login berhasil!'.green.bold);
