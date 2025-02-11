@@ -2,7 +2,7 @@ const axios = require('axios');
 const readline = require('readline');
 require('colors');
 
-const API_LOGIN = 'https://app.heyelsa.ai/login'; // Pastikan endpoint benar
+const API_LOGIN = 'https://app.heyelsa.ai/login'; // Endpoint login
 const API_CHECKIN = 'https://app.heyelsa.ai/api/points'; // Endpoint check-in
 const API_TASKS = 'https://app.heyelsa.ai/api/points_history'; // Endpoint klaim poin
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
@@ -18,43 +18,29 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-const login = async (walletAddress) => {
-    console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`.yellow);
+const login = async () => {
+    console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
+
+    // Pastikan loginUrl dan cookie terdefinisi sebelum digunakan
+    const loginUrl = API_LOGIN;
+    const cookie = ''; // Pastikan mendapatkan cookie yang valid sebelum dipakai
 
     try {
-        const response = await axios.post(API_LOGIN, { wallet: walletAddress }, {
+        const response = await axios.get(loginUrl, {
             headers: {
-                'Content-Type': 'application/json',
+                'Cookie': cookie,
                 'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json',
+                'Accept': 'application/json, text/html',
             }
         });
 
-        console.log('📢 Response Headers:', response.headers); // Debugging
-        console.log('📢 Response Data:', response.data); // Debugging
-
-        // Mencoba mendapatkan cookies
-        let cookies = response.headers['set-cookie'];
-        if (!cookies) {
-            console.log(`⚠️ [${getFormattedTime()}] Tidak ada cookies yang dikembalikan, mencoba token...`.red);
-            
-            // Coba ambil token dari response body jika tersedia
-            if (response.data?.token) {
-                cookies = [`token=${response.data.token}`];
-                console.log(`✅ [${getFormattedTime()}] Token ditemukan dan digunakan sebagai cookies!`.green);
-            }
+        if (response.status === 200) {
+            console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
+        } else {
+            console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi status bukan 200: ${response.status}`);
         }
-
-        if (!cookies) {
-            console.log(`❌ [${getFormattedTime()}] Gagal mendapatkan cookies/token.`.red);
-            return null;
-        }
-
-        console.log(`✅ [${getFormattedTime()}] Login berhasil!`.green);
-        return cookies;
     } catch (error) {
-        console.error(`❌ [${getFormattedTime()}] Login gagal!`, error.response?.data || error.message);
-        return null;
+        console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
     }
 };
 
@@ -118,7 +104,7 @@ async function startDailyRoutine(walletAddress) {
   while (true) {
     const cookies = await login(walletAddress);
     if (!cookies) {
-      console.log(`❌ [${getFormattedTime()}] Gagal mendapatkan cookies/token. Coba lagi nanti.`.red);
+      console.log(`❌ [${getFormattedTime()}] Gagal mendapatkan cookies. Coba lagi nanti.`.red);
       return;
     }
 
