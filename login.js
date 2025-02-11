@@ -119,9 +119,9 @@ const getPointHistory = async () => {
 // Fungsi utama
 async function startRoutine() {
   const cookie = await login();
+  displayHeader();
   if (!cookie) return;
   
-  displayHeader();
   await getTotalPoints();
   await getPointHistory();
 
