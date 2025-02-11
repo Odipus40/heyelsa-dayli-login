@@ -1,10 +1,10 @@
 require('dotenv').config();
 const axios = require('axios');
-const { ethers } = require('ethers');
+const ethers = require('ethers');
 require('colors');
 const { displayHeader } = require('./helpers'); // Import fungsi dari helpers.js
 
-const loginUrl = 'https://app.heyelsa.ai/api/login_privatekey';
+const loginUrl = 'https://app.heyelsa.ai/login';
 const pointsUrl = 'https://app.heyelsa.ai/api/points';
 const historyUrl = 'https://app.heyelsa.ai/api/points_history';
 
@@ -16,12 +16,11 @@ if (!privateKey || !evm_address) {
     process.exit(1);
 }
 
-// Fungsi untuk mendapatkan waktu sekarang (WIB)
 const getFormattedTime = () => {
     return new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 };
 
-// Fungsi untuk login menggunakan Private Key
+// Fungsi login dengan Private Key
 const login = async () => {
     console.log(`\n⏳ [${getFormattedTime()}] Starting login process using Private Key...`);
 
@@ -44,7 +43,7 @@ const login = async () => {
 
         if (response.status === 200 && response.data.token) {
             console.log(`✅ [${getFormattedTime()}] Login successful!`);
-            return response.data.token; // Token ini akan digunakan untuk permintaan berikutnya
+            return response.data.token; // Simpan token
         } else {
             console.error(`⚠️ [${getFormattedTime()}] Login berhasil tetapi tidak mendapatkan token!`);
             return null;
@@ -55,92 +54,66 @@ const login = async () => {
     }
 };
 
-// Fungsi untuk mengambil total poin dari API `/points`
 const getTotalPoints = async (token) => {
-    console.log(`\n💰 [${getFormattedTime()}] Points for address: ${evm_address}...`);
+    console.log(`\n💰 [${getFormattedTime()}] Fetching points for address: ${evm_address}...`);
 
     try {
-        const response = await axios.post(pointsUrl, 
-            { evm_address }, 
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
+        const response = await axios.post(pointsUrl, { evm_address }, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
             }
-        );
-
-        console.log("🔍 Debug Response:", response.data);
+        });
 
         if (response.status === 200) {
-            const totalPoints = response.data.points;
-            console.log(`🎯 Current Points Total: ${totalPoints}`);
+            console.log(`🎯 Current Points Total: ${response.data.points}`);
         } else {
-            console.error(`⚠️ Failed to retrieve points, status: ${response.status}`);
+            console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
         }
     } catch (error) {
-        console.error(`❌ Error fetching points:`, error.response?.data || error.message);
+        console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
     }
 };
 
-// Fungsi untuk mengambil history poin
 const getPointHistory = async (token) => {
-    console.log(`\n📌 [${getFormattedTime()}] History for address: ${evm_address}...`);
+    console.log(`\n📌 [${getFormattedTime()}] Fetching point history for address: ${evm_address}...`);
 
     try {
-        const response = await axios.post(historyUrl, 
-            { evm_address }, 
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
+        const response = await axios.post(historyUrl, { evm_address }, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
             }
-        );
+        });
 
-        if (response.status === 200) {
-            const data = response.data;
-            if (data.points_details && Array.isArray(data.points_details)) {
-                console.log("🔹 Points History:");
-                data.points_details.forEach((entry, index) => {
-                    console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} points on ${entry.created_at_utc}`);
-                });
-            } else {
-                console.error(`⚠️ No history found or incorrect format.`);
-            }
+        if (response.status === 200 && Array.isArray(response.data.points_details)) {
+            console.log("🔹 Riwayat Poin:");
+            response.data.points_details.forEach((entry, index) => {
+                console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
+            });
         } else {
-            console.error(`⚠️ Failed to retrieve history, status: ${response.status}`);
+            console.error(`⚠️ History poin tidak ditemukan.`);
         }
     } catch (error) {
-        console.error(`❌ Error fetching point history:`, error.response?.data || error.message);
+        console.error(`❌ Terjadi kesalahan saat mengambil history poin:`, error.response?.data || error.message);
     }
 };
 
-// Fungsi utama untuk menjalankan semua proses
 const run = async () => {
     displayHeader();
     console.log(`\n🚀 [${getFormattedTime()}] Starting automatic execution...\n`);
-    
     const token = await login();
-    if (!token) {
+    if (token) {
+        await getTotalPoints(token);
+        await getPointHistory(token);
+    } else {
         console.error("❌ Failed to retrieve authentication token. Exiting...");
-        return;
     }
-
-    await getTotalPoints(token);
-    await getPointHistory(token);
-
-    const nextRun = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
 };
 
-// Jalankan pertama kali
 run();
-
-// Jalankan setiap 24 jam sekali
-const intervalTime = 24 * 60 * 60 * 1000; 
-setInterval(run, intervalTime);
+setInterval(run, 24 * 60 * 60 * 1000);
