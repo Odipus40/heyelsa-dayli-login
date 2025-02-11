@@ -2,9 +2,9 @@ const axios = require('axios');
 const readline = require('readline');
 require('colors');
 
-const API_LOGIN = 'https://app.heyelsa.ai/login'; // Ubah sesuai endpoint login
-const API_CHECKIN = 'https://app.heyelsa.ai/api/points'; // Endpoint untuk check-in
-const API_TASKS = 'https://app.heyelsa.ai/api/points_history'; // Endpoint klaim poin dari tugas
+const API_LOGIN = 'https://app.heyelsa.ai/login'; // Endpoint login
+const API_CHECKIN = 'https://app.heyelsa.ai/api/points'; // Endpoint check-in
+const API_TASKS = 'https://app.heyelsa.ai/api/points_history'; // Endpoint klaim poin
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
 
 const rl = readline.createInterface({
@@ -25,29 +25,13 @@ async function login(walletAddress) {
     console.log('📢 Response Data:', response.data); // Debugging
 
     const cookies = response.headers['set-cookie']; // Ambil cookies dari header
-    if (!cookies) {
+    if (!cookies || cookies.length === 0) {
       console.log('❌ Tidak ada cookies yang dikembalikan.'.red);
       return null;
     }
 
     console.log('✅ Login berhasil! Cookies diterima.'.green);
     return cookies;
-  } 
-    
-    catch (error) {
-    console.error('⚠️ Error saat login:', error.response?.data || error.message);
-    return null;
-  }
-}
- 
-    if (response.data.success) {
-      console.log('✅ Login berhasil!'.green.bold);
-      console.log(`🎟️ Token: ${response.data.token.substring(0, 50)}...`);
-      return response.headers['set-cookie'];
-    } else {
-      console.log('❌ Login gagal!'.red);
-      return null;
-    }
   } catch (error) {
     console.error('⚠️ Error saat login:', error.response?.data || error.message);
     return null;
@@ -58,6 +42,11 @@ async function checkIn(cookies) {
   console.log('🚀 Memulai check-in harian...\n'.blue);
 
   try {
+    if (!cookies) {
+      console.log('❌ Tidak ada cookies. Tidak bisa check-in.'.red);
+      return;
+    }
+
     const cookieHeader = cookies.join('; ');
 
     const response = await axios.post(API_CHECKIN, {}, {
@@ -67,7 +56,7 @@ async function checkIn(cookies) {
       },
     });
 
-    if (response.data.success) {
+    if (response.data?.success) {
       console.log(`✅ Check-in berhasil! 🎉 Poin diperoleh: ${response.data.points}`.green.bold);
     } else {
       console.log('❌ Check-in gagal! Coba lagi nanti.'.red);
@@ -81,6 +70,11 @@ async function claimTasks(cookies) {
   console.log('🎯 Mengklaim poin dari tugas...\n'.blue);
 
   try {
+    if (!cookies) {
+      console.log('❌ Tidak ada cookies. Tidak bisa klaim tugas.'.red);
+      return;
+    }
+
     const cookieHeader = cookies.join('; ');
 
     const response = await axios.post(API_TASKS, {}, {
@@ -90,7 +84,7 @@ async function claimTasks(cookies) {
       },
     });
 
-    if (response.data.success) {
+    if (response.data?.success) {
       console.log(`🏆 Poin tambahan berhasil diklaim! 🎉 Total: ${response.data.points}`.green.bold);
     } else {
       console.log('❌ Gagal mengklaim poin dari tugas.'.red);
@@ -126,4 +120,3 @@ rl.question('💳 Masukkan alamat wallet HeyElsa: '.cyan, (walletAddress) => {
   rl.close();
   startDailyRoutine(walletAddress);
 });
-  
