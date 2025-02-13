@@ -6,7 +6,7 @@ const { displayHeader } = require('./helpers');
 require('dotenv').config(); // Load variabel dari .env
 
 const API_LOGIN = 'https://app.heyelsa.ai/login?_src=';
-const API_LOGOUT = 'https://app.heyelsa.ai/logout';
+const API_LOGOUT = 'https://app.heyelsa.ai/';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
