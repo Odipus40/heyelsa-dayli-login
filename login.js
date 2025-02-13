@@ -5,7 +5,7 @@ require('colors');
 const { displayHeader } = require('./helpers');
 require('dotenv').config();
 
-const API_LOGIN = 'https://app.heyelsa.ai/api/login_wallet';
+const API_LOGIN = 'https://app.heyelsa.ai/api/login';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
 const WAIT_TIME = 23 * 60 * 60 * 1000 + 55 * 60 * 1000;
@@ -29,7 +29,7 @@ async function loginWithWalletAddress() {
     }
     
     try {
-        const response = await axios.post(API_LOGIN, {
+        const response = await axios.get(API_LOGIN, {
             address: evm_address
         }, {
             headers: {
