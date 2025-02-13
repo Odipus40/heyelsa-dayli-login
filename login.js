@@ -1,30 +1,33 @@
 const axios = require('axios');
+const fs = require('fs');
 const readline = require('readline');
 require('colors');
 const { displayHeader } = require('./helpers');
-
-require('dotenv').config(); // Load variabel dari .env
+require('dotenv').config();
 
 const API_LOGIN = 'https://app.heyelsa.ai/login?_src=';
+const API_LOGOUT = 'https://app.heyelsa.ai/logout';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
-const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+const WAIT_TIME = 23 * 60 * 60 * 1000 + 55 * 60 * 1000; // 23 jam 55 menit
 
-// Ambil variabel dari .env
 const evm_address = process.env.EVM_ADDRESS;
-const cookie = process.env.COOKIE; // Ambil cookies dari .env
+const cookie = process.env.COOKIE;
+const LOG_FILE = 'script_log.txt';
 
-// Fungsi untuk mendapatkan waktu dalam format yang lebih rapi
-function getFormattedTime() {
-  return new Date().toLocaleString('id-ID', { hour12: false });
+function logMessage(message) {
+    const timestamp = new Date().toLocaleString('id-ID', { hour12: false });
+    const log = `[${timestamp}] ${message}`;
+    console.log(log);
+    fs.appendFileSync(LOG_FILE, log + '\n');
 }
 
-const login = async () => {
-    console.log(`\n⏳ [${getFormattedTime()}] Starting login process...`);
+async function login() {
+    logMessage('⏳ Starting login process...');
 
     if (!cookie) {
-        console.error(`⚠️ [${getFormattedTime()}] No cookies received.`);
-        return null;
+        logMessage('⚠️ No cookies received.');
+        process.exit(1);
     }
 
     try {
@@ -37,108 +40,110 @@ const login = async () => {
         });
 
         if (response.status === 200) {
-            console.log(`✅ [${getFormattedTime()}] Login successful!!!`);
+            logMessage('✅ Login successful!');
             return cookie;
         } else {
-            console.error(`⚠️ [${getFormattedTime()}] Login success but not status 200: ${response.status}`);
+            logMessage(`⚠️ Login status: ${response.status}`);
             return null;
         }
     } catch (error) {
-        console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
+        logMessage(`❌ Login Failed: ${error.message}`);
         return null;
     }
-};
-
-// Fungsi untuk mengambil total poin
-const getTotalPoints = async (cookie) => {
-    if (!evm_address) {
-        console.error("⚠️ evm_address not set in .env");
-        return;
-    }
-
-    console.log(`\n💰 [${getFormattedTime()}] Checking points for address: ${evm_address}...`);
-
-    try {
-        const response = await axios.post(API_POINTS, 
-            { evm_address }, // Payload
-            {
-                headers: {
-                    'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        if (response.status === 200 && response.data.points !== undefined) {
-            console.log(`🎯 Current Points Total: ${response.data.points}`);
-        } else {
-            console.error(`⚠️ Failed to retrieve total points, status: ${response.status}`);
-        }
-    } catch (error) {
-        console.error(`❌ Error retrieving total points:`, error.response?.data || error.message);
-    }
-};
-
-// Fungsi untuk mengambil history poin
-const getPointHistory = async (cookie) => {
-    if (!evm_address) {
-        console.error("⚠️ evm_address not set in .env");
-        return;
-    }
-
-    console.log(`\n📜 [${getFormattedTime()}] Checking history for address: ${evm_address}...`);
-
-    try {
-        const response = await axios.post(API_HISTORY, 
-            { evm_address }, // Payload dengan evm_address
-            {
-                headers: {
-                    'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        if (response.status === 200 && response.data.points_details) {
-            console.log("🔹 Points History:");
-            response.data.points_details.forEach((entry, index) => {
-                console.log(`   ${index + 1}. ${entry.activity_type} - ${entry.points} points on ${entry.created_at_utc}`);
-            });
-        } else {
-            console.error(`⚠️ Points history not found or not in the expected format.`);
-        }
-    } catch (error) {
-        console.error(`❌ Error retrieving points history:`, error.response?.data || error.message);
-    }
-};
-
-// Fungsi utama
-async function startRoutine() {
-    console.log("\n🚀 Running script...");
-    await displayHeader(); // Menampilkan header jika diperlukan
-
-    const cookie = await login();
-    if (!cookie) {
-        console.error("❌ Login failed, stopping execution.");
-        return;
-    }
-
-    await getTotalPoints(cookie);
-    await getPointHistory(cookie);
-
-    const nextRun = new Date(Date.now() + WAIT_TIME).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
-
-    // Tunggu 24 jam sebelum menjalankan ulang
-    await new Promise(resolve => setTimeout(resolve, WAIT_TIME));
-
-    // Jalankan ulang
-    await startRoutine();
 }
 
-// Jalankan pertama kali
+async function logout(cookie) {
+    logMessage('🔒 Logging out...');
+    try {
+        const response = await axios.post(API_LOGOUT, {}, {
+            headers: {
+                'Cookie': cookie,
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json',
+            }
+        });
+
+        if (response.status === 200) {
+            logMessage('✅ Logout successful!');
+        } else {
+            logMessage(`⚠️ Logout failed, status: ${response.status}`);
+        }
+    } catch (error) {
+        logMessage(`❌ Error during logout: ${error.message}`);
+    }
+}
+
+async function getTotalPoints(cookie) {
+    if (!evm_address) {
+        logMessage('⚠️ evm_address not set in .env');
+        return;
+    }
+    logMessage(`💰 Checking points for address: ${evm_address}...`);
+    try {
+        const response = await axios.post(API_POINTS, { evm_address }, {
+            headers: {
+                'Cookie': cookie,
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+        });
+        if (response.status === 200 && response.data.points !== undefined) {
+            logMessage(`🎯 Current Points Total: ${response.data.points}`);
+        } else {
+            logMessage(`⚠️ Failed to retrieve total points, status: ${response.status}`);
+        }
+    } catch (error) {
+        logMessage(`❌ Error retrieving total points: ${error.message}`);
+    }
+}
+
+async function getPointHistory(cookie) {
+    if (!evm_address) {
+        logMessage('⚠️ evm_address not set in .env');
+        return;
+    }
+    logMessage(`📜 Checking history for address: ${evm_address}...`);
+    try {
+        const response = await axios.post(API_HISTORY, { evm_address }, {
+            headers: {
+                'Cookie': cookie,
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+        });
+        if (response.status === 200 && response.data.points_details) {
+            logMessage('🔹 Points History:');
+            response.data.points_details.forEach((entry, index) => {
+                logMessage(`   ${index + 1}. ${entry.activity_type} - ${entry.points} points on ${entry.created_at_utc}`);
+            });
+        } else {
+            logMessage('⚠️ Points history not found.');
+        }
+    } catch (error) {
+        logMessage(`❌ Error retrieving points history: ${error.message}`);
+    }
+}
+
+async function startRoutine() {
+    logMessage('\n🚀 Running script...');
+    await displayHeader();
+
+    const sessionCookie = await login();
+    if (!sessionCookie) {
+        logMessage('❌ Login failed, retrying in 10 minutes...');
+        setTimeout(startRoutine, 10 * 60 * 1000); // Retry dalam 10 menit
+        return;
+    }
+
+    await getTotalPoints(sessionCookie);
+    await getPointHistory(sessionCookie);
+    await logout(sessionCookie);
+
+    const nextRun = new Date(Date.now() + WAIT_TIME).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    logMessage(`⏳ Script will run again on: ${nextRun} (WIB)\n`);
+    setTimeout(startRoutine, WAIT_TIME);
+}
+
 startRoutine();
