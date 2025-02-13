@@ -6,7 +6,6 @@ const { displayHeader } = require('./helpers');
 require('dotenv').config(); // Load variabel dari .env
 
 const API_LOGIN = 'https://app.heyelsa.ai/login?_src=';
-const API_LOGOUT = 'https://app.heyelsa.ai/';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
@@ -47,28 +46,6 @@ const login = async () => {
     } catch (error) {
         console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
         return null;
-    }
-};
-
-const logout = async (cookie) => {
-    console.log(`\n🔒 [${getFormattedTime()}] Logging out...`);
-    try {
-        const response = await axios.get(API_LOGOUT, {}, {
-            headers: {
-                'Cookie': cookie,
-                'User-Agent': 'Mozilla/5.0',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
-        });
-
-        if (response.status === 200) {
-            console.log(`✅ [${getFormattedTime()}] Logout successful!`);
-        } else {
-            console.error(`⚠️ [${getFormattedTime()}] Logout failed with status: ${response.status}`);
-        }
-    } catch (error) {
-        console.error(`❌ [${getFormattedTime()}] Error during logout:`, error.response?.data || error.message);
     }
 };
 
@@ -152,7 +129,6 @@ async function startRoutine() {
 
     await getTotalPoints(cookie);
     await getPointHistory(cookie);
-    await logout(cookie);
 
     const nextRun = new Date(Date.now() + WAIT_TIME).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
     console.log(`\n⏳ Script will run again on: ${nextRun} (WIB)\n`);
