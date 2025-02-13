@@ -6,7 +6,7 @@ const { displayHeader } = require('./helpers');
 require('dotenv').config();
 const { ethers } = require('ethers');
 
-const API_LOGIN = 'https://app.heyelsa.ai/api/login_wallet';
+const API_LOGIN = 'https://app.heyelsa.ai/api/login';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
 const WAIT_TIME = 23 * 60 * 60 * 1000 + 55 * 60 * 1000;
@@ -35,7 +35,7 @@ async function loginWithMetamask() {
         const message = "Login to HeyElsa at " + new Date().toISOString();
         const signature = await wallet.signMessage(message);
         
-        const response = await axios.post(API_LOGIN, {
+        const response = await axios.get(API_LOGIN, {
             address: wallet.address,
             signature: signature,
             message: message
