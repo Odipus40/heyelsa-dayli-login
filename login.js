@@ -1,12 +1,41 @@
+require('dotenv').config();
 const axios = require('axios');
+const { ethers } = require('ethers');
 
-async function testLogin() {
+// Ambil private key dari .env
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+
+if (!PRIVATE_KEY) {
+    console.error("PRIVATE_KEY tidak ditemukan di .env");
+    process.exit(1);
+}
+
+const wallet = new ethers.Wallet(PRIVATE_KEY);
+
+async function loginHeyElsa() {
     try {
-        const response = await axios.post("https://app.heyelsa.ai/login", {});
-        console.log(response.data);
+        // 1. Minta challenge message
+        const challengeResponse = await axios.post('https://app.heyelsa.ai/api/auth/request-message', {
+            address: wallet.address
+        });
+
+        const message = challengeResponse.data.message;
+        console.log("Challenge message:", message);
+
+        // 2. Wallet menandatangani pesan
+        const signature = await wallet.signMessage(message);
+        console.log("Signature:", signature);
+
+        // 3. Kirim signature ke server untuk login
+        const loginResponse = await axios.post('https://app.heyelsa.ai/api/auth/login', {
+            address: wallet.address,
+            signature: signature
+        });
+
+        console.log("Login successful!", loginResponse.data);
     } catch (error) {
-        console.error("Error:", error.response?.data || error.message);
+        console.error("Login failed:", error.response?.data || error.message);
     }
 }
 
-testLogin();
+loginHeyElsa();
