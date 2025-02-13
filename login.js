@@ -4,15 +4,13 @@ const readline = require('readline');
 require('colors');
 const { displayHeader } = require('./helpers');
 require('dotenv').config();
-const { ethers } = require('ethers');
 
-const API_LOGIN = 'https://app.heyelsa.ai/api/login';
+const API_LOGIN = 'https://app.heyelsa.ai/api/login_wallet';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
 const WAIT_TIME = 23 * 60 * 60 * 1000 + 55 * 60 * 1000;
 
 const evm_address = process.env.EVM_ADDRESS;
-const private_key = process.env.PRIVATE_KEY;
 const LOG_FILE = 'script_log.txt';
 
 function logMessage(message) {
@@ -22,23 +20,17 @@ function logMessage(message) {
     fs.appendFileSync(LOG_FILE, log + '\n');
 }
 
-async function loginWithMetamask() {
-    logMessage('⏳ Starting Metamask login process...');
+async function loginWithWalletAddress() {
+    logMessage('⏳ Starting wallet address login process...');
     
-    if (!private_key) {
-        logMessage('⚠️ No private key provided in .env');
+    if (!evm_address) {
+        logMessage('⚠️ No wallet address provided in .env');
         return null;
     }
     
     try {
-        const wallet = new ethers.Wallet(private_key);
-        const message = "Login to HeyElsa at " + new Date().toISOString();
-        const signature = await wallet.signMessage(message);
-        
-        const response = await axios.get(API_LOGIN, {
-            address: wallet.address,
-            signature: signature,
-            message: message
+        const response = await axios.post(API_LOGIN, {
+            address: evm_address
         }, {
             headers: {
                 'User-Agent': 'Mozilla/5.0',
@@ -48,7 +40,7 @@ async function loginWithMetamask() {
         });
         
         if (response.status === 200 && response.data.token) {
-            logMessage('✅ Metamask login successful!');
+            logMessage('✅ Wallet address login successful!');
             return response.data.token;
         } else {
             logMessage(`⚠️ Login status: ${response.status} - ${JSON.stringify(response.data)}`);
@@ -117,7 +109,7 @@ async function startRoutine() {
     logMessage('\n🚀 Running script...');
     await displayHeader();
 
-    const token = await loginWithMetamask();
+    const token = await loginWithWalletAddress();
     if (!token) {
         logMessage('❌ Login failed, retrying in 10 minutes...');
         setTimeout(startRoutine, 10 * 60 * 1000);
