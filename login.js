@@ -51,11 +51,11 @@ async function loginWithMetamask() {
             logMessage('✅ Metamask login successful!');
             return response.data.token;
         } else {
-            logMessage(`⚠️ Login status: ${response.status}`);
+            logMessage(`⚠️ Login status: ${response.status} - ${JSON.stringify(response.data)}`);
             return null;
         }
     } catch (error) {
-        logMessage(`❌ Login Failed: ${error.message}`);
+        logMessage(`❌ Login Failed: ${error.response?.status} - ${JSON.stringify(error.response?.data) || error.message}`);
         return null;
     }
 }
@@ -81,7 +81,7 @@ async function getTotalPoints(token) {
             logMessage(`⚠️ Failed to retrieve total points, status: ${response.status}`);
         }
     } catch (error) {
-        logMessage(`❌ Error retrieving total points: ${error.message}`);
+        logMessage(`❌ Error retrieving total points: ${error.response?.status} - ${JSON.stringify(error.response?.data) || error.message}`);
     }
 }
 
@@ -109,7 +109,7 @@ async function getPointHistory(token) {
             logMessage('⚠️ Points history not found.');
         }
     } catch (error) {
-        logMessage(`❌ Error retrieving points history: ${error.message}`);
+        logMessage(`❌ Error retrieving points history: ${error.response?.status} - ${JSON.stringify(error.response?.data) || error.message}`);
     }
 }
 
