@@ -15,7 +15,7 @@ const wallet = new ethers.Wallet(PRIVATE_KEY);
 async function loginHeyElsa() {
     try {
         // 1. Minta challenge message
-        const challengeResponse = await axios.post('https://app.heyelsa.ai/login', {
+        const challengeResponse = await axios.get('https://app.heyelsa.ai/login', {
             address: wallet.address
         });
 
@@ -27,7 +27,7 @@ async function loginHeyElsa() {
         console.log("Signature:", signature);
 
         // 3. Kirim signature ke server untuk login
-        const loginResponse = await axios.post('https://app.heyelsa.ai/login', {
+        const loginResponse = await axios.get('https://app.heyelsa.ai/login', {
             address: wallet.address,
             signature: signature
         });
