@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const API_LOGIN = 'https://app.heyelsa.ai/login?_src=';
 const cookie = process.env.COOKIE;
+const evm_address = process.env.EVM_ADDRESS; // Ambil wallet address dari .env
 
 const login = async () => {
     console.log(`\n⏳ Starting login process...`);
@@ -14,14 +15,22 @@ const login = async () => {
     }
 
     try {
-        // Buat FormData hanya dengan field "0"
+        // Buat FormData untuk payload
         const form = new FormData();
         form.append('0', JSON.stringify([
-            { action: "$F1", options: {} }, // "options" tetap kosong
+            { action: "$F1", options: {} },
             "Injected",
             "$undefined",
             ["Arbitrum", "Base", "Berachain", "Optimism", "Polygon", "BSC", "Berachain", "Hyperliquid"]
         ]));
+
+        form.append('preview', JSON.stringify({
+            "0": [{
+                "role": "system",
+                "content": `User has connected from country code ID via Injected with their wallet address: ${evm_address} and it supports the following chains: Arbitrum, Base, Berachain, Optimism, Polygon, BSC, Berachain, Hyperliquid`
+            }],
+            "_t": "a"
+        }));
 
         // Kirim request login
         const response = await axios.get(API_LOGIN, {
