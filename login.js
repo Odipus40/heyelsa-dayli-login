@@ -1,22 +1,18 @@
 const axios = require('axios');
-const readline = require('readline');
-require('colors');
-const { displayHeader } = require('./helpers');
-
-require('dotenv').config(); // Load variabel dari .env
+const FormData = require('form-data');
+require('dotenv').config();
 
 const API_LOGIN = 'https://app.heyelsa.ai/login?_src=';
 const API_POINTS = 'https://app.heyelsa.ai/api/points';
 const API_HISTORY = 'https://app.heyelsa.ai/api/points_history';
+
 const WAIT_TIME = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+const cookie = process.env.COOKIE;
+const evm_address = process.env.EVM_ADDRESS; // Ambil wallet address dari .env
 
-// Ambil variabel dari .env
-const evm_address = process.env.EVM_ADDRESS;
-const cookie = process.env.COOKIE; // Ambil cookies dari .env
-
-// Fungsi untuk mendapatkan waktu dalam format yang lebih rapi
+// Fungsi untuk mendapatkan waktu saat ini dalam format yang lebih rapi
 function getFormattedTime() {
-  return new Date().toLocaleString('id-ID', { hour12: false });
+    return new Date().toLocaleString('id-ID', { hour12: false });
 }
 
 const login = async () => {
@@ -28,12 +24,32 @@ const login = async () => {
     }
 
     try {
+        // Buat FormData untuk payload login
+        const form = new FormData();
+        form.append('0', JSON.stringify([
+            { action: "$F1", options: {} },
+            "Injected",
+            "$undefined",
+            ["Arbitrum", "Base", "Berachain", "Optimism", "Polygon", "BSC", "Berachain", "Hyperliquid"]
+        ]));
+
+        form.append('preview', JSON.stringify({
+            "0": [{
+                "role": "system",
+                "content": `User has connected from country code ID via Injected with their wallet address: ${evm_address} and it supports the following chains: Arbitrum, Base, Berachain, Optimism, Polygon, BSC, Berachain, Hyperliquid`
+            }],
+            "_t": "a"
+        }));
+
+        // Kirim request login
         const response = await axios.get(API_LOGIN, {
             headers: {
                 'Cookie': cookie,
+                ...form.getHeaders(),
                 'User-Agent': 'Mozilla/5.0',
                 'Accept': 'application/json, text/html',
-            }
+            },
+            data: form
         });
 
         if (response.status === 200) {
@@ -44,7 +60,7 @@ const login = async () => {
             return null;
         }
     } catch (error) {
-        console.error(`❌ [${getFormattedTime()}] Login Failed!!!: ${error.message}`);
+        console.error(`❌ [${getFormattedTime()}] Login Failed:`, error.response?.data || error.message);
         return null;
     }
 };
@@ -116,10 +132,9 @@ const getPointHistory = async (cookie) => {
     }
 };
 
-// Fungsi utama
+// Fungsi utama untuk menjalankan login dan pengambilan data poin
 async function startRoutine() {
     console.log("\n🚀 Running script...");
-    await displayHeader(); // Menampilkan header jika diperlukan
 
     const cookie = await login();
     if (!cookie) {
