@@ -1,12 +1,11 @@
 const puppeteer = require("puppeteer"); 
 const fs = require("fs");
 const axios = require("axios");
-const readline = require("readline");
-require("colors");
-const { displayHeader } = require("./helpers"); // Import fungsi dari helpers.js
+const { getCurrentTimestamp } = require("./helpers");
 
 const HEYELSA_URL = "https://app.heyelsa.ai/login";
-const pointsUrl = "https://app.heyelsa.ai/api/points"; // API total poin
+const POINTS_API_URL = "https://app.heyelsa.ai/api/points";
+
 const DEFAULT_SLEEP_TIME = 24 * 60 * 60 * 1000; // 24 jam
 const RANDOM_EXTRA_DELAY = () => Math.floor(Math.random() * (10 - 5 + 1) + 5) * 60 * 1000; // 5-10 menit delay acak
 
@@ -14,67 +13,107 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getCurrentTimestamp() {
-  return new Date().toLocaleString("en-US", {
-    month: "numeric",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-}
-
 function loadData(file) {
   try {
-    const datas = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
-    return datas;
+    const lines = fs.readFileSync(file, "utf8").split("\n").map(line => line.trim()).filter(Boolean);
+    
+    if (lines.length % 2 !== 0) {
+      console.log("⚠️ Format data.txt salah! Pastikan setiap akun memiliki 2 baris (cookie & evm_address).");
+      return [];
+    }
+    
+    const accounts = [];
+    for (let i = 0; i < lines.length; i += 2) {
+      accounts.push({ cookie: lines[i], evm_address: lines[i + 1] });
+    }
+    return accounts;
   } catch (error) {
     console.log(`⚠️ Tidak dapat menemukan file ${file}`);
     return [];
   }
 }
 
-async function getTotalPoints(cookie, evm_address) {
-  console.log(`\n💰 [${getCurrentTimestamp()}] Points your address: ${evm_address}...`);
-  
+async function runAccount({ cookie, evm_address }) {
   try {
-    const response = await axios.post(pointsUrl, 
-      { evm_address }, // Payload dengan evm_address
-      {
-        headers: {
-          'Cookie': cookie,
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        }
-      }
-    );
+    console.log(`⏳ [${getCurrentTimestamp()}] Memulai login...`);
 
-    if (response.status === 200) {
-      const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
-      console.log(`🎯 Current Points Total: ${totalPoints}`);
-    } else {
-      console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    const page = await browser.newPage();
+
+    await page.setCookie({
+      name: "session-token",
+      value: cookie.trim(),
+      domain: "app.heyelsa.ai",
+      path: "/",
+      secure: true,
+      httpOnly: true,
+    });
+
+    await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
+
+    const loginFailed = await page.$("input[name='email'], input[type='password'], .error-message");
+    if (loginFailed) {
+      console.error(`❌ [${getCurrentTimestamp()}] Login gagal, kemungkinan cookie expired!`);
+      await browser.close();
+      return;
     }
+
+    console.log(`✅ [${getCurrentTimestamp()}] Login berhasil.`);
+    
+    await getTotalPoints(cookie, evm_address);
+    await browser.close();
   } catch (error) {
-    console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
+    console.error(`❌ [${getCurrentTimestamp()}] Error:`, error);
   }
 }
 
+const getTotalPoints = async (cookie, evm_address) => {
+  console.log(`💰 [${getCurrentTimestamp()}] Points your address: ${evm_address}...`);
+
+  try {
+    const response = await axios.post(POINTS_API_URL, { evm_address }, {
+      headers: {
+        'Cookie': `session-token=${cookie.trim()}`,
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    try {
+      const data = response.data;
+      if (!data || typeof data !== "object") {
+        throw new Error("Respon bukan JSON valid.");
+      }
+      if ("points" in data) {
+        console.log(`🎯 Current Points Total: ${data.points}`);
+      } else {
+        console.error("⚠️ Data API tidak memiliki 'points', cek respons server.");
+      }
+    } catch (err) {
+      console.error(`❌ Gagal parsing JSON:`, err.message);
+    }
+  } catch (error) {
+    if (error.response) {
+      console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response.data);
+    } else {
+      console.error(`❌ Request gagal:`, error.message);
+    }
+  }
+};
+
 (async () => {
-  displayHeader(); // Menampilkan header dari helpers.js
   console.log(`🚀 [${getCurrentTimestamp()}] Memulai bot HeyElsa...`);
-  const data = loadData("data.txt");
-  
+  const accounts = loadData("data.txt");
+
   while (true) {
     try {
       console.log(`🔄 [${getCurrentTimestamp()}] Memulai siklus baru...`);
-      for (let i = 0; i < data.length; i += 2) {
-        const cookie = data[i];
-        const evm_address = data[i + 1] || ""; // Pastikan evm_address ada
-        await runAccount(cookie, evm_address);
+      for (let account of accounts) {
+        await runAccount(account);
       }
     } catch (error) {
       console.error(`❌ [${getCurrentTimestamp()}] Terjadi kesalahan:`, error);
@@ -85,35 +124,3 @@ async function getTotalPoints(cookie, evm_address) {
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
-
-async function runAccount(cookie, evm_address) {
-  try {
-    console.log(`⏳ [${getCurrentTimestamp()}] Memulai login...`);
-    
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-    const page = await browser.newPage();
-
-    await page.setCookie({
-      name: "session-token",
-      value: cookie,
-      domain: "app.heyelsa.ai",
-      path: "/",
-      secure: true,
-      httpOnly: true,
-    });
-
-    await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
-
-    console.log(`✅ [${getCurrentTimestamp()}] Login berhasil.`);
-    
-    // Ambil total poin setelah login
-    await getTotalPoints(cookie, evm_address);
-
-    await browser.close();
-  } catch (error) {
-    console.error(`❌ [${getCurrentTimestamp()}] Error:`, error);
-  }
-}
