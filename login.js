@@ -19,13 +19,13 @@ function loadData(file) {
     const datas = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
     return datas;
   } catch (error) {
-    console.log(`⚠️ [${getCurrentTimestamp()}] Tidak dapat menemukan file ${file}`);
+    console.log(`⚠️ [${getCurrentTimestamp()}] Cannot find file ${file}`);
     return [];
   }
 }
 
 async function getTotalPoints(evm_address, cookie) {
-  console.log(`💰 [${getCurrentTimestamp()}] Points for address: ${evm_address}...`);
+  console.log(`💰 [${getCurrentTimestamp()}] Points your address: ${evm_address}...`);
 
   try {
     const response = await axios.post(pointsUrl, 
@@ -42,7 +42,7 @@ async function getTotalPoints(evm_address, cookie) {
 
     if (response.status === 200) {
       const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
-      console.log(`🎯 [${getCurrentTimestamp()}] Current Points Total: ${totalPoints}`);
+      console.log(`🎯 [${getCurrentTimestamp()}] Current Total Points: ${totalPoints}`);
     } else {
       console.error(`⚠️ [${getCurrentTimestamp()}] Gagal mengambil total poin, status: ${response.status}`);
     }
@@ -53,7 +53,7 @@ async function getTotalPoints(evm_address, cookie) {
 
 async function runAccount(cookie, evm_address) {
   try {
-    console.log(`⏳ [${getCurrentTimestamp()}] Memulai login...`);
+    console.log(`⏳ [${getCurrentTimestamp()}] Starting login...`);
     
     const browser = await puppeteer.launch({
       headless: true,
@@ -72,7 +72,7 @@ async function runAccount(cookie, evm_address) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    console.log(`✅ [${getCurrentTimestamp()}] Login berhasil.`);
+    console.log(`✅ [${getCurrentTimestamp()}] Login Successfully...`);
 
     await getTotalPoints(evm_address, cookie);
 
@@ -84,24 +84,24 @@ async function runAccount(cookie, evm_address) {
 
 (async () => {
   displayHeader();
-  console.log(`🚀 [${getCurrentTimestamp()}] Memulai bot HeyElsa...`);
+  console.log(`🚀 [${getCurrentTimestamp()}] Starting bot heyelsa...`);
   const data = loadData("cookies.txt");
   const addresses = loadData("data.txt");
 
   while (true) {
     try {
-      console.log(`🔄 [${getCurrentTimestamp()}] Memulai siklus baru...`);
+      console.log(`🔄 [${getCurrentTimestamp()}] Prepare login...`);
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
         const evm_address = addresses[i] || "";
         await runAccount(cookie, evm_address);
       }
     } catch (error) {
-      console.error(`❌ [${getCurrentTimestamp()}] Terjadi kesalahan:`, error);
+      console.error(`❌ [${getCurrentTimestamp()}] There is an error:`, error);
     }
 
     const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`🛌 [${getCurrentTimestamp()}] Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+    console.log(`🛌 [${getCurrentTimestamp()}] Sleep for 24 hours + delay ${extraDelay / 60000} menit...`);
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
