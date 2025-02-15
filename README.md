@@ -5,48 +5,46 @@ If you can not have account register here:
 
 https://app.heyelsa.ai/referral/RANPVS
 
-Clone repository:
+➖ Clone repository:
 ```
 git clone https://github.com/Odipus40/heyelsa-dayli-login/
 ```
 
-Directory Heyelsa:
+➖ Directory Heyelsa:
 ```
 cd heyelsa-dayli-login
 ```
 
-Install module
+➖ install modules
 ```
 npm install
 ```
 
-Create folder cookies.txt
+➖ Create folder cookies.txt
 ```
 nano cookies.txt
 ```
 `
-your_cookie_session
+fill_your_cookie_session
 `
 
-Create folder data.txt
+➖ Create folder data.txt
 ```
 nano data.txt
 ```
 `
-your_evm_address
+fill_your_evm_address
 `
-
-Create Screen
+➖ Create Screen
 ```
 screen -S heyelsa
 ```
-
-Run
+➖ Run
 ```
 node login.js
 ```
 
-Exit screen:
+➖ Exit screen:
 CTRL + A + B
 
-Done
+✅ Done!
