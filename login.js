@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer"); 
 const fs = require("fs");
 
-const HEYELSA_URL = "https://app.heyelsa.ai/";
+const HEYELSA_URL = "https://app.heyelsa.ai/login";
 const DEFAULT_SLEEP_TIME = 24 * 60 * 60 * 1000; // 24 jam
 const RANDOM_EXTRA_DELAY = () => Math.floor(Math.random() * (10 - 5 + 1) + 5) * 60 * 1000; // 5-10 menit delay acak
 
@@ -16,32 +16,6 @@ function loadData(file) {
   } catch (error) {
     console.log(`⚠️ Tidak dapat menemukan file ${file}`);
     return [];
-  }
-}
-
-async function getPoints(page) {
-  try {
-    await page.waitForTimeout(5000); // Tunggu 5 detik setelah login
-
-    const response = await page.evaluate(async () => {
-      const res = await fetch("https://app.heyelsa.ai/api/points", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": navigator.userAgent, // Tambahkan User-Agent
-          "Referer": "https://app.heyelsa.ai/" // Tambahkan Referer
-        },
-        credentials: "include"
-      });
-
-      if (!res.ok) throw new Error("Gagal mengambil data");
-      return await res.json();
-    });
-
-    return response && response.points !== undefined ? response.points : "Unknown";
-  } catch (error) {
-    console.error("❌ Gagal mengambil points:", error);
-    return "Unknown";
   }
 }
 
@@ -64,9 +38,7 @@ async function runAccount(cookie) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    console.log(`✅ [${new Date().toLocaleString()}] Login berhasil.`);
-    const points = await getPoints(page);
-    console.log(`⭐ [${new Date().toLocaleString()}] Current Points: ${points}`);
+    console.log("✅ Login berhasil.");
 
     await browser.close();
   } catch (error) {
@@ -75,12 +47,12 @@ async function runAccount(cookie) {
 }
 
 (async () => {
-  console.log(`🚀 [${new Date().toLocaleString()}] Memulai bot HeyElsa...`);
+  console.log("🚀 Memulai bot HeyElsa...");
   const data = loadData("cookies.txt");
 
   while (true) {
     try {
-      console.log(`🔄 [${new Date().toLocaleString()}] Memulai siklus baru...`);
+      console.log("🔄 Memulai siklus baru...");
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
         await runAccount(cookie);
@@ -90,7 +62,7 @@ async function runAccount(cookie) {
     }
 
     const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`🛌 [${new Date().toLocaleString()}] Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+    console.log(`🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
