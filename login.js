@@ -42,11 +42,9 @@ async function getTotalPoints(evm_address, cookie) {
       }
     );
 
-    console.log(`🔍 Debug Response:`, response.data); // Debug untuk melihat isi response API
-
     if (response.status === 200) {
       const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
-      console.log(`🎯 Current Points Total: ${totalPoints}`);
+      console.log(`🎯 [${getCurrentTimestamp()}] Current Points Total: ${totalPoints}`);
     } else {
       console.error(`⚠️ [${getCurrentTimestamp()}] Gagal mengambil total poin, status: ${response.status}`);
     }
