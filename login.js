@@ -10,15 +10,14 @@ function delay(ms) {
 }
 
 function getCurrentTimestamp() {
-  const now = new Date();
-  return now.toLocaleString("id-ID", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
+  return new Date().toLocaleString("en-US", {
+    month: "numeric",
     day: "numeric",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    hour12: true,
   });
 }
 
@@ -34,7 +33,7 @@ function loadData(file) {
 
 async function runAccount(cookie) {
   try {
-    console.log(`[${getCurrentTimestamp()}] ⏳ Memulai login...`);
+    console.log(`⏳ [${getCurrentTimestamp()}] Memulai login...`);
     
     const browser = await puppeteer.launch({
       headless: true,
@@ -53,31 +52,31 @@ async function runAccount(cookie) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    console.log(`[${getCurrentTimestamp()}] ✅ Login berhasil.`);
+    console.log(`✅ [${getCurrentTimestamp()}] Login berhasil.`);
 
     await browser.close();
   } catch (error) {
-    console.error(`[${getCurrentTimestamp()}] ❌ Error:`, error);
+    console.error(`❌ [${getCurrentTimestamp()}] Error:`, error);
   }
 }
 
 (async () => {
-  console.log(`[${getCurrentTimestamp()}] 🚀 Memulai bot HeyElsa...`);
+  console.log(`🚀 [${getCurrentTimestamp()}] Memulai bot HeyElsa...`);
   const data = loadData("cookies.txt");
 
   while (true) {
     try {
-      console.log(`[${getCurrentTimestamp()}] 🔄 Memulai siklus baru...`);
+      console.log(`🔄 [${getCurrentTimestamp()}] Memulai siklus baru...`);
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
         await runAccount(cookie);
       }
     } catch (error) {
-      console.error(`[${getCurrentTimestamp()}] ❌ Terjadi kesalahan:`, error);
+      console.error(`❌ [${getCurrentTimestamp()}] Terjadi kesalahan:`, error);
     }
 
     const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`[${getCurrentTimestamp()}] 🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+    console.log(`🛌 [${getCurrentTimestamp()}] Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
