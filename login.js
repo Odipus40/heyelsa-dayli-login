@@ -3,6 +3,7 @@ const fs = require("fs");
 const axios = require("axios");
 
 const HEYELSA_URL = "https://app.heyelsa.ai/login";
+const pointsUrl = 'https://app.heyelsa.ai/api/points'; // API total poin
 const DEFAULT_SLEEP_TIME = 24 * 60 * 60 * 1000; // 24 jam
 const RANDOM_EXTRA_DELAY = () => Math.floor(Math.random() * (10 - 5 + 1) + 5) * 60 * 1000; // 5-10 menit delay acak
 
@@ -86,41 +87,6 @@ const getTotalPoints = async () => {
     }
 };
 
-const getPointHistory = async () => {
-    logMessage(`\n📌 History your address: ${evm_address}...`);
-
-    try {
-        const response = await axios.post(historyUrl, 
-            { params: { evm_address } },
-            {
-                headers: {
-                    'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        if (response.status === 200) {
-            const data = response.data;
-
-            if (data.points_details && Array.isArray(data.points_details)) {
-                logMessage("🔹 Riwayat Poin:");
-                data.points_details.forEach((entry, index) => {
-                    logMessage(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
-                });
-            } else {
-                logMessage(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
-            }
-        } else {
-            logMessage(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
-        }
-    } catch (error) {
-        logMessage(`❌ Terjadi kesalahan saat mengambil history poin: ${error.response?.data || error.message}`);
-    }
-};
-
 (async () => {
   logMessage("🚀 Memulai bot HeyElsa...");
   const data = loadData("cookies.txt");
@@ -132,6 +98,7 @@ const getPointHistory = async () => {
         const cookie = data[i];
         logMessage(`🔹 Memproses akun ke-${i + 1}`);
         await runAccount(cookie);
+        await getTotalPoints();
       }
     } catch (error) {
       logMessage("❌ Terjadi kesalahan: " + error);
