@@ -1,7 +1,9 @@
 const puppeteer = require("puppeteer"); 
 const fs = require("fs");
+const axios = require("axios");
 
 const HEYELSA_URL = "https://app.heyelsa.ai/login";
+const pointsUrl = "https://app.heyelsa.ai/api/points"; // API total poin
 const DEFAULT_SLEEP_TIME = 24 * 60 * 60 * 1000; // 24 jam
 const RANDOM_EXTRA_DELAY = () => Math.floor(Math.random() * (10 - 5 + 1) + 5) * 60 * 1000; // 5-10 menit delay acak
 
@@ -32,6 +34,35 @@ function loadData(file) {
   }
 }
 
+async function getTotalPoints(cookie, evm_address) {
+  console.log(`\n💰 [${getCurrentTimestamp()}] Points your address: ${evm_address}...`);
+
+  try {
+    const response = await axios.post(pointsUrl, 
+      { evm_address }, // Payload dengan evm_address
+      {
+        headers: {
+          "Cookie": cookie,
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        }
+      }
+    );
+
+    console.log("🔍 Debug Response:", response.data); // Debug untuk melihat isi response API
+
+    if (response.status === 200) {
+      const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
+      console.log(`🎯 Current Points Total: ${totalPoints}`);
+    } else {
+      console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
+  }
+}
+
 async function runAccount(cookie) {
   try {
     console.log(`[${getCurrentTimestamp()}] ⏳ Memulai login...`);
@@ -54,6 +85,14 @@ async function runAccount(cookie) {
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
     console.log(`[${getCurrentTimestamp()}] ✅ Login berhasil.`);
+
+    // Dapatkan alamat EVM dari localStorage
+    const evm_address = await page.evaluate(() => localStorage.getItem("evm_address"));
+    if (evm_address) {
+      await getTotalPoints(cookie, evm_address);
+    } else {
+      console.log(`⚠️ Tidak dapat menemukan evm_address.`);
+    }
 
     await browser.close();
   } catch (error) {
