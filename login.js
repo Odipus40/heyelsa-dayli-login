@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer"); 
 const fs = require("fs");
+const axios = require("axios");
 
 const HEYELSA_URL = "https://app.heyelsa.ai/login";
 const DEFAULT_SLEEP_TIME = 24 * 60 * 60 * 1000; // 24 jam
@@ -11,15 +12,13 @@ function delay(ms) {
 
 function getCurrentTimestamp() {
   const now = new Date();
-  return now.toLocaleString("id-ID", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  return now.toISOString().replace("T", " ").substring(0, 19); // Format YYYY-MM-DD HH:MM:SS
+}
+
+function logMessage(message) {
+  const timestamp = getCurrentTimestamp();
+  console.log(`[${timestamp}] ${message}`);
+  fs.appendFileSync("points_log.txt", `[${timestamp}] ${message}\n`);
 }
 
 function loadData(file) {
@@ -27,15 +26,13 @@ function loadData(file) {
     const datas = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
     return datas;
   } catch (error) {
-    console.log(`⚠️ Tidak dapat menemukan file ${file}`);
+    logMessage(`⚠️ Tidak dapat menemukan file ${file}`);
     return [];
   }
 }
 
 async function runAccount(cookie) {
   try {
-    console.log(`[${getCurrentTimestamp()}] ⏳ Memulai login...`);
-    
     const browser = await puppeteer.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -53,31 +50,95 @@ async function runAccount(cookie) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    console.log(`[${getCurrentTimestamp()}] ✅ Login berhasil.`);
-
+    logMessage("✅ Login berhasil.");
     await browser.close();
   } catch (error) {
-    console.error(`[${getCurrentTimestamp()}] ❌ Error:`, error);
+    logMessage("❌ Error: " + error);
   }
 }
 
+const getTotalPoints = async () => {
+    logMessage(`\n💰 Points your address: ${evm_address}...`);
+
+    try {
+        const response = await axios.post(pointsUrl, 
+            { evm_address },
+            {
+                headers: {
+                    'Cookie': cookie,
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        logMessage("🔍 Debug Response: " + JSON.stringify(response.data));
+
+        if (response.status === 200) {
+            const totalPoints = response.data.points;
+            logMessage(`🎯 Current Points Total: ${totalPoints}`);
+        } else {
+            logMessage(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
+        }
+    } catch (error) {
+        logMessage(`❌ Terjadi kesalahan saat mengambil total poin: ${error.response?.data || error.message}`);
+    }
+};
+
+const getPointHistory = async () => {
+    logMessage(`\n📌 History your address: ${evm_address}...`);
+
+    try {
+        const response = await axios.post(historyUrl, 
+            { params: { evm_address } },
+            {
+                headers: {
+                    'Cookie': cookie,
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        if (response.status === 200) {
+            const data = response.data;
+
+            if (data.points_details && Array.isArray(data.points_details)) {
+                logMessage("🔹 Riwayat Poin:");
+                data.points_details.forEach((entry, index) => {
+                    logMessage(`   ${index + 1}. ${entry.activity_type} - ${entry.points} poin pada ${entry.created_at_utc}`);
+                });
+            } else {
+                logMessage(`⚠️ History poin tidak ditemukan atau tidak dalam format yang diharapkan.`);
+            }
+        } else {
+            logMessage(`⚠️ Gagal mengambil history poin, status: ${response.status}`);
+        }
+    } catch (error) {
+        logMessage(`❌ Terjadi kesalahan saat mengambil history poin: ${error.response?.data || error.message}`);
+    }
+};
+
 (async () => {
-  console.log(`[${getCurrentTimestamp()}] 🚀 Memulai bot HeyElsa...`);
+  logMessage("🚀 Memulai bot HeyElsa...");
   const data = loadData("cookies.txt");
 
   while (true) {
     try {
-      console.log(`[${getCurrentTimestamp()}] 🔄 Memulai siklus baru...`);
+      logMessage("🔄 Memulai siklus baru...");
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
+        logMessage(`🔹 Memproses akun ke-${i + 1}`);
         await runAccount(cookie);
       }
     } catch (error) {
-      console.error(`[${getCurrentTimestamp()}] ❌ Terjadi kesalahan:`, error);
+      logMessage("❌ Terjadi kesalahan: " + error);
     }
 
     const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`[${getCurrentTimestamp()}] 🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+    logMessage(`🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
