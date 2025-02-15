@@ -11,15 +11,7 @@ function delay(ms) {
 
 function getCurrentTimestamp() {
   const now = new Date();
-  return now.toLocaleString("id-ID", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  return now.toISOString().replace("T", " ").split(".")[0]; // Format YYYY-MM-DD HH:MM:SS
 }
 
 function loadData(file) {
@@ -27,7 +19,7 @@ function loadData(file) {
     const datas = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
     return datas;
   } catch (error) {
-    console.log(`⚠️ Tidak dapat menemukan file ${file}`);
+    console.log(`[${getCurrentTimestamp()}] ⚠️ Tidak dapat menemukan file ${file}`);
     return [];
   }
 }
