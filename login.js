@@ -21,17 +21,23 @@ function loadData(file) {
 
 async function getPoints(page) {
   try {
+    await page.waitForTimeout(5000); // Tunggu 5 detik setelah login
+
     const response = await page.evaluate(async () => {
       const res = await fetch("https://app.heyelsa.ai/api/points", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "User-Agent": navigator.userAgent, // Tambahkan User-Agent
+          "Referer": "https://app.heyelsa.ai/" // Tambahkan Referer
         },
         credentials: "include"
       });
+
       if (!res.ok) throw new Error("Gagal mengambil data");
       return await res.json();
     });
+
     return response && response.points !== undefined ? response.points : "Unknown";
   } catch (error) {
     console.error("❌ Gagal mengambil points:", error);
