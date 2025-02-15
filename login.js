@@ -96,7 +96,7 @@ const getTotalPoints = async () => {
       logMessage("🔄 Memulai siklus baru...");
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
-        logMessage(`🔹 Memproses akun ke-${i + 1}`);
+        logMessage("🔹 Memproses akun");
         await runAccount(cookie);
         await getTotalPoints();
       }
