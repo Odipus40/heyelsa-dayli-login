@@ -87,7 +87,7 @@ async function runAccount(cookie) {
     console.log(`[${getCurrentTimestamp()}] ✅ Login berhasil.`);
 
     // Tunggu sebelum mencoba mengambil evm_address
-    await page.waitForTimeout(5000);
+    await new Promise(r => setTimeout(r, 5000));
     
     // Coba ambil evm_address dari localStorage atau cookie
     const evm_address = await page.evaluate(() => {
