@@ -19,27 +19,27 @@ function loadData(file) {
   }
 }
 
-async function runAccount(cookie) {
-  async function getPoints(page) {
-    try {
-      const response = await page.evaluate(async () => {
-        const res = await fetch("https://app.heyelsa.ai/api/points", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include"
-        });
-        if (!res.ok) throw new Error("Gagal mengambil data");
-        return await res.json();
+async function getPoints(page) {
+  try {
+    const response = await page.evaluate(async () => {
+      const res = await fetch("https://app.heyelsa.ai/api/points", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include"
       });
-      return response && response.points !== undefined ? response.points : "Unknown";
-    } catch (error) {
-      console.error("❌ Gagal mengambil points:", error);
-      return "Unknown";
-    }
+      if (!res.ok) throw new Error("Gagal mengambil data");
+      return await res.json();
+    });
+    return response && response.points !== undefined ? response.points : "Unknown";
+  } catch (error) {
+    console.error("❌ Gagal mengambil points:", error);
+    return "Unknown";
   }
-  }
+}
+
+async function runAccount(cookie) {
   try {
     const browser = await puppeteer.launch({
       headless: true,
