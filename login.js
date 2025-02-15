@@ -20,6 +20,20 @@ function loadData(file) {
 }
 
 async function runAccount(cookie) {
+  async function getPoints(page) {
+    try {
+      const response = await page.evaluate(async () => {
+        const res = await fetch("https://app.heyelsa.ai/api/points", {
+          credentials: "include"
+        });
+        return res.ok ? await res.json() : null;
+      });
+      return response ? response.points : "Unknown";
+    } catch (error) {
+      console.error("❌ Gagal mengambil points:", error);
+      return "Unknown";
+    }
+  }
   try {
     const browser = await puppeteer.launch({
       headless: true,
@@ -39,6 +53,8 @@ async function runAccount(cookie) {
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
     console.log(`✅ [${new Date().toLocaleString()}] Login berhasil.`);
+    const points = await getPoints(page);
+    console.log(`⭐ [${new Date().toLocaleString()}] Current Points: ${points}`);
 
     await browser.close();
   } catch (error) {
