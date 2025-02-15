@@ -38,7 +38,7 @@ async function runAccount(cookie) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    console.log("✅ Login berhasil.");
+    console.log(`✅ [${new Date().toLocaleString()}] Login berhasil.`);
 
     await browser.close();
   } catch (error) {
@@ -47,12 +47,12 @@ async function runAccount(cookie) {
 }
 
 (async () => {
-  console.log("🚀 Memulai bot HeyElsa...");
+  console.log(`🚀 [${new Date().toLocaleString()}] Memulai bot HeyElsa...`);
   const data = loadData("cookies.txt");
 
   while (true) {
     try {
-      console.log("🔄 Memulai siklus baru...");
+      console.log(`🔄 [${new Date().toLocaleString()}] Memulai siklus baru...`);
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
         await runAccount(cookie);
@@ -62,7 +62,7 @@ async function runAccount(cookie) {
     }
 
     const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+    console.log(`🛌 [${new Date().toLocaleString()}] Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
