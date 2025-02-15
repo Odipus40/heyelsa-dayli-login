@@ -63,7 +63,7 @@ async function runAccount(cookie) {
 
 (async () => {
   console.log(`[${getCurrentTimestamp()}] 🚀 Memulai bot HeyElsa...`);
-  const data = loadData("cookies.txt");
+  const data = loadData("data.txt");
 
   while (true) {
     try {
