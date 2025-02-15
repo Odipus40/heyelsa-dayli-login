@@ -21,13 +21,13 @@ function loadData(file) {
     const datas = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
     return datas;
   } catch (error) {
-    console.log(`[${getCurrentTimestamp()}] ⚠️ Tidak dapat menemukan file ${file}`);
+    console.log(`⚠️ [${getCurrentTimestamp()}] Tidak dapat menemukan file ${file}`);
     return [];
   }
 }
 
 async function getTotalPoints(evm_address, cookie) {
-  console.log(`\n💰 [${getCurrentTimestamp()}] Points for address: ${evm_address}...`);
+  console.log(`💰 [${getCurrentTimestamp()}] Points for address: ${evm_address}...`);
 
   try {
     const response = await axios.post(pointsUrl, 
@@ -42,22 +42,22 @@ async function getTotalPoints(evm_address, cookie) {
       }
     );
 
-    console.log("🔍 Debug Response:", response.data); // Debug untuk melihat isi response API
+    console.log(`🔍 Debug Response:`, response.data); // Debug untuk melihat isi response API
 
     if (response.status === 200) {
       const totalPoints = response.data.points; // FIX: Mengambil dari 'points' bukan 'total_points'
       console.log(`🎯 Current Points Total: ${totalPoints}`);
     } else {
-      console.error(`⚠️ Gagal mengambil total poin, status: ${response.status}`);
+      console.error(`⚠️ [${getCurrentTimestamp()}] Gagal mengambil total poin, status: ${response.status}`);
     }
   } catch (error) {
-    console.error(`❌ Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
+    console.error(`❌ [${getCurrentTimestamp()}] Terjadi kesalahan saat mengambil total poin:`, error.response?.data || error.message);
   }
 }
 
 async function runAccount(cookie, evm_address) {
   try {
-    console.log(`[${getCurrentTimestamp()}] ⏳ Memulai login...`);
+    console.log(`⏳ [${getCurrentTimestamp()}] Memulai login...`);
     
     const browser = await puppeteer.launch({
       headless: true,
@@ -76,35 +76,35 @@ async function runAccount(cookie, evm_address) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    console.log(`[${getCurrentTimestamp()}] ✅ Login berhasil.`);
+    console.log(`✅ [${getCurrentTimestamp()}] Login berhasil.`);
 
     await getTotalPoints(evm_address, cookie);
 
     await browser.close();
   } catch (error) {
-    console.error(`[${getCurrentTimestamp()}] ❌ Error:`, error);
+    console.error(`❌ [${getCurrentTimestamp()}] Error:`, error);
   }
 }
 
 (async () => {
-  console.log(`[${getCurrentTimestamp()}] 🚀 Memulai bot HeyElsa...`);
+  console.log(`🚀 [${getCurrentTimestamp()}] Memulai bot HeyElsa...`);
   const data = loadData("cookies.txt");
   const addresses = loadData("data.txt");
 
   while (true) {
     try {
-      console.log(`[${getCurrentTimestamp()}] 🔄 Memulai siklus baru...`);
+      console.log(`🔄 [${getCurrentTimestamp()}] Memulai siklus baru...`);
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
         const evm_address = addresses[i] || "";
         await runAccount(cookie, evm_address);
       }
     } catch (error) {
-      console.error(`[${getCurrentTimestamp()}] ❌ Terjadi kesalahan:`, error);
+      console.error(`❌ [${getCurrentTimestamp()}] Terjadi kesalahan:`, error);
     }
 
     const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`[${getCurrentTimestamp()}] 🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+    console.log(`🛌 [${getCurrentTimestamp()}] Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
