@@ -1,8 +1,7 @@
 const puppeteer = require("puppeteer"); 
 const fs = require("fs");
-const readline = require("readline");
 
-const HEYELSA_URL = "https://app.heyelsa.ai/login";
+const HEYELSA_URL = "https://app.heyelsa.ai/";
 const DEFAULT_SLEEP_TIME = 24 * 60 * 60 * 1000; // 24 jam
 const RANDOM_EXTRA_DELAY = () => Math.floor(Math.random() * (10 - 5 + 1) + 5) * 60 * 1000; // 5-10 menit delay acak
 
@@ -39,12 +38,7 @@ async function runAccount(cookie) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    const userAddress = await page.$eval(".wallet-address", (el) => el.innerText).catch(() => "Unknown");
-    console.log(`💳 Logged in as: ${userAddress}`);
-
-    await page.waitForTimeout(5000); // Tunggu beberapa detik untuk memastikan login
-
-    console.log("✅ Login berhasil, mendapatkan poin.");
+    console.log("✅ Login berhasil.");
 
     await browser.close();
   } catch (error) {
