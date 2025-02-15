@@ -1,15 +1,13 @@
 const puppeteer = require("puppeteer"); 
 const fs = require("fs");
 const axios = require("axios");
+require("colors");
+const { displayHeader } = require("./helpers"); // Import fungsi dari helpers.js
 
 const HEYELSA_URL = "https://app.heyelsa.ai/login";
 const pointsUrl = "https://app.heyelsa.ai/api/points"; // API total poin
 const DEFAULT_SLEEP_TIME = 24 * 60 * 60 * 1000; // 24 jam
 const RANDOM_EXTRA_DELAY = () => Math.floor(Math.random() * (10 - 5 + 1) + 5) * 60 * 1000; // 5-10 menit delay acak
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function getCurrentTimestamp() {
   const now = new Date();
@@ -85,6 +83,7 @@ async function runAccount(cookie, evm_address) {
 }
 
 (async () => {
+  displayHeader();
   console.log(`🚀 [${getCurrentTimestamp()}] Memulai bot HeyElsa...`);
   const data = loadData("cookies.txt");
   const addresses = loadData("data.txt");
