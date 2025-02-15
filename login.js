@@ -9,6 +9,19 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getCurrentTimestamp() {
+  const now = new Date();
+  return now.toLocaleString("id-ID", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 function loadData(file) {
   try {
     const datas = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
@@ -21,6 +34,8 @@ function loadData(file) {
 
 async function runAccount(cookie) {
   try {
+    console.log(`[${getCurrentTimestamp()}] ⏳ Memulai login...`);
+    
     const browser = await puppeteer.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -38,31 +53,31 @@ async function runAccount(cookie) {
 
     await page.goto(HEYELSA_URL, { waitUntil: "networkidle2", timeout: 60000 });
 
-    console.log("✅ Login berhasil.");
+    console.log(`[${getCurrentTimestamp()}] ✅ Login berhasil.`);
 
     await browser.close();
   } catch (error) {
-    console.error("❌ Error:", error);
+    console.error(`[${getCurrentTimestamp()}] ❌ Error:`, error);
   }
 }
 
 (async () => {
-  console.log("🚀 Memulai bot HeyElsa...");
+  console.log(`[${getCurrentTimestamp()}] 🚀 Memulai bot HeyElsa...`);
   const data = loadData("cookies.txt");
 
   while (true) {
     try {
-      console.log("🔄 Memulai siklus baru...");
+      console.log(`[${getCurrentTimestamp()}] 🔄 Memulai siklus baru...`);
       for (let i = 0; i < data.length; i++) {
         const cookie = data[i];
         await runAccount(cookie);
       }
     } catch (error) {
-      console.error("❌ Terjadi kesalahan:", error);
+      console.error(`[${getCurrentTimestamp()}] ❌ Terjadi kesalahan:`, error);
     }
 
     const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+    console.log(`[${getCurrentTimestamp()}] 🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
     await delay(DEFAULT_SLEEP_TIME + extraDelay);
   }
 })();
