@@ -86,8 +86,14 @@ async function runAccount(cookie) {
 
     console.log(`[${getCurrentTimestamp()}] ✅ Login berhasil.`);
 
-    // Dapatkan alamat EVM dari localStorage
-    const evm_address = await page.evaluate(() => localStorage.getItem("evm_address"));
+    // Tunggu sebelum mencoba mengambil evm_address
+    await page.waitForTimeout(5000);
+    
+    // Coba ambil evm_address dari localStorage atau cookie
+    const evm_address = await page.evaluate(() => {
+      return window.localStorage.getItem("evm_address") || document.cookie.match(/evm_address=([^;]+)/)?.[1] || null;
+    });
+
     if (evm_address) {
       await getTotalPoints(cookie, evm_address);
     } else {
