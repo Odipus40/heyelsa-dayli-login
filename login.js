@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const axios = require("axios");
 require("colors");
-const { displayHeader } = require("./helpers"); // Import fungsi dari helpers.js
+const { displayHeader, delay } = require("./helpers"); // Import fungsi dari helpers.js
 
 const HEYELSA_URL = "https://app.heyelsa.ai/login";
 const pointsUrl = "https://app.heyelsa.ai/api/points"; // API total poin
