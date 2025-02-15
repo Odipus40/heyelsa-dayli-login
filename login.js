@@ -66,15 +66,14 @@ async function getTotalPoints(cookie, evm_address) {
 (async () => {
   displayHeader(); // Menampilkan header dari helpers.js
   console.log(`🚀 [${getCurrentTimestamp()}] Memulai bot HeyElsa...`);
-  const data = loadData("cookies.txt");
-  const evmData = loadData("data.txt");
-  const evm_address = evmData.length > 0 ? evmData[0] : ""; // Ambil alamat EVM dari data.txt
-
+  const data = loadData("data.txt");
+  
   while (true) {
     try {
       console.log(`🔄 [${getCurrentTimestamp()}] Memulai siklus baru...`);
-      for (let i = 0; i < data.length; i++) {
+      for (let i = 0; i < data.length; i += 2) {
         const cookie = data[i];
+        const evm_address = data[i + 1] || ""; // Pastikan evm_address ada
         await runAccount(cookie, evm_address);
       }
     } catch (error) {
