@@ -1,6 +1,9 @@
 const puppeteer = require("puppeteer"); 
 const fs = require("fs");
 const axios = require("axios");
+const readline = require("readline");
+require("colors");
+const { displayHeader } = require("./helpers"); // Import fungsi dari helpers.js
 
 const HEYELSA_URL = "https://app.heyelsa.ai/login";
 const pointsUrl = "https://app.heyelsa.ai/api/points"; // API total poin
@@ -61,6 +64,7 @@ async function getTotalPoints(cookie, evm_address) {
 }
 
 (async () => {
+  displayHeader(); // Menampilkan header dari helpers.js
   console.log(`🚀 [${getCurrentTimestamp()}] Memulai bot HeyElsa...`);
   const data = loadData("cookies.txt");
   const evmData = loadData("data.txt");
