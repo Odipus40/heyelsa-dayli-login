@@ -20,16 +20,20 @@ Install module
 npm install
 ```
 
-Create folder .env
+Create folder cookies.txt
 ```
-nano .env
+nano cookies.txt
 ```
 `
-COOKIE=your_cookie
+your_cookie_session
 `
 
+Create folder data.txt
+```
+nano data.txt
+```
 `
-EVM_ADDRESS=your_evm_address
+your_evm_address
 `
 
 Create Screen
