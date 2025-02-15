@@ -65,19 +65,13 @@ async function runAccount(cookie) {
   console.log(`[${getCurrentTimestamp()}] 🚀 Memulai bot HeyElsa...`);
   const data = loadData("data.txt");
 
-  while (true) {
-    try {
-      console.log(`[${getCurrentTimestamp()}] 🔄 Memulai siklus baru...`);
-      for (let i = 0; i < data.length; i++) {
-        const cookie = data[i];
-        await runAccount(cookie);
-      }
-    } catch (error) {
-      console.error(`[${getCurrentTimestamp()}] ❌ Terjadi kesalahan:`, error);
-    }
-
-    const extraDelay = RANDOM_EXTRA_DELAY();
-    console.log(`[${getCurrentTimestamp()}] 🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
-    await delay(DEFAULT_SLEEP_TIME + extraDelay);
+  if (data.length > 0) {
+    await runAccount(data[0]);
+  } else {
+    console.log(`[${getCurrentTimestamp()}] ⚠️ Tidak ada data untuk login.`);
   }
+
+  const extraDelay = RANDOM_EXTRA_DELAY();
+  console.log(`[${getCurrentTimestamp()}] 🛌 Tidur selama 24 jam + delay ${extraDelay / 60000} menit...`);
+  await delay(DEFAULT_SLEEP_TIME + extraDelay);
 })();
